@@ -780,6 +780,14 @@ class Tensor:
         A = self.as_signature(tuple(target_sig), simplify=False)
         return IndexedTensor(self, A, tuple(target_sig), labels)
 
+    def up(self, *labels):
+        labels = _complete_indices_right(labels, self.rank)
+        return _IndexBuilder(self, up=labels, has_up=True)
+
+    def down(self, *labels):
+        labels = _complete_indices_right(labels, self.rank)
+        return _IndexBuilder(self, down=labels, has_down=True)
+
 
 class Metric(Tensor):
     pass
@@ -851,6 +859,27 @@ class TensorFactory:
         return self.space.scalar(expr, name=name, label=label)
 
 
+class _IndexBuilder:
+    def __init__(self, tensor, up=None, down=None, has_up=False, has_down=False):
+        self.tensor = tensor
+        self.up = [None] * tensor.rank if up is None else list(up)
+        self.down = [None] * tensor.rank if down is None else list(down)
+        self.has_up = has_up
+        self.has_down = has_down
+
+    def up(self, *labels):
+        labels = _complete_indices_right(labels, self.tensor.rank)
+        if self.has_down:
+            return self.tensor.idx(up=labels, down=self.down)
+        return _IndexBuilder(self.tensor, up=labels, down=self.down, has_up=True, has_down=self.has_down)
+
+    def down(self, *labels):
+        labels = _complete_indices_right(labels, self.tensor.rank)
+        if self.has_up:
+            return self.tensor.idx(up=self.up, down=labels)
+        return _IndexBuilder(self.tensor, up=self.up, down=labels, has_up=self.has_up, has_down=True)
+
+
 def _parse_label(label, space):
     if label is NO_LABEL:
         return NO_LABEL
@@ -861,6 +890,14 @@ def _parse_label(label, space):
     if isinstance(label, str):
         return label.strip()
     return str(label)
+
+
+def _complete_indices_right(labels, rank):
+    labels = list(labels)
+    if len(labels) > rank:
+        raise ValueError("Numero de indices nao bate com o rank do tensor.")
+    labels.extend([None] * (rank - len(labels)))
+    return labels
 
 
 def _parse_tensor_token(token):
