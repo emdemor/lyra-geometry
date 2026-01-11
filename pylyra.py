@@ -624,11 +624,17 @@ class Tensor:
     def __mul__(self, other):
         if self.rank == 0:
             return self._as_scalar() * other
+        if isinstance(other, IndexedTensor) and hasattr(self, "_labels"):
+            indexed = IndexedTensor(self, self.components, self.signature, list(self._labels))
+            return self.space.contract(indexed, other)
         return NotImplemented
 
     def __rmul__(self, other):
         if self.rank == 0:
             return other * self._as_scalar()
+        if isinstance(other, IndexedTensor) and hasattr(self, "_labels"):
+            indexed = IndexedTensor(self, self.components, self.signature, list(self._labels))
+            return self.space.contract(other, indexed)
         return NotImplemented
 
     def __truediv__(self, other):
@@ -792,6 +798,12 @@ class IndexedTensor:
             if other.tensor.space is not space:
                 raise ValueError("Tensores pertencem a TensorSpaces distintos.")
             return space.contract(self, other)
+        if isinstance(other, Tensor) and hasattr(other, "_labels"):
+            space = self.tensor.space
+            if other.space is not space:
+                raise ValueError("Tensores pertencem a TensorSpaces distintos.")
+            indexed = IndexedTensor(other, other.components, other.signature, list(other._labels))
+            return space.contract(self, indexed)
         return NotImplemented
 
     def __rmul__(self, other):
@@ -800,6 +812,12 @@ class IndexedTensor:
             if self.tensor.space is not space:
                 raise ValueError("Tensores pertencem a TensorSpaces distintos.")
             return space.contract(other, self)
+        if isinstance(other, Tensor) and hasattr(other, "_labels"):
+            space = other.space
+            if self.tensor.space is not space:
+                raise ValueError("Tensores pertencem a TensorSpaces distintos.")
+            indexed = IndexedTensor(other, other.components, other.signature, list(other._labels))
+            return space.contract(indexed, self)
         return NotImplemented
 
 
@@ -936,3 +954,12 @@ class SpaceTime(TensorSpace):
 
 class Manifold(TensorSpace):
     pass
+
+
+def example_indexing():
+    x, y = sp.symbols("x y")
+    space = TensorSpace(2, (x, y))
+    a, b, c = space.index("a b c")
+    T = space.generic("T", (u, d))
+    g = space.generic("g", (u, u))
+    return T[u(a), d(b)] * g[u(b), u(c)]
