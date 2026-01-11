@@ -114,7 +114,7 @@ class TensorSpace:
     @property
     def detg(self):
         if self._detg is None and self.metric is not None:
-            self._detg = sp.simplify(sp.Matrix(self.metric).det())
+            self._detg = sp.simplify(sp.Matrix(self.metric.components).det())
         return self._detg
 
     @property
