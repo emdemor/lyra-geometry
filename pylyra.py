@@ -819,6 +819,11 @@ class IndexedTensor:
         self.signature = signature
         self.labels = labels
 
+    def _repr_html_(self):
+        if hasattr(self.components, "_repr_html_"):
+            return self.components._repr_html_()
+        return repr(self.components)
+
     def __call__(self, *idx):
         if len(idx) != len(self.signature):
             raise ValueError("Numero de indices nao bate com o rank do tensor.")
