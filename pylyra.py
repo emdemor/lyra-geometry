@@ -867,6 +867,52 @@ class IndexedTensor:
             return space.contract(indexed, self)
         return NotImplemented
 
+    def __add__(self, other):
+        if isinstance(other, IndexedTensor):
+            other_sig = other.signature
+            other_space = other.tensor.space
+            other_components = other.components
+        elif isinstance(other, Tensor):
+            other_sig = other.signature
+            other_space = other.space
+            other_components = other.components
+        else:
+            return NotImplemented
+        if other_space is not self.tensor.space:
+            raise ValueError("Tensores pertencem a TensorSpaces distintos.")
+        if other_sig != self.signature:
+            raise ValueError("Assinaturas diferentes; soma exige mesma assinatura.")
+        arr = self.components + other_components
+        tensor = Tensor(arr, self.tensor.space, signature=self.signature)
+        return IndexedTensor(tensor, tensor.components, tensor.signature, list(self.labels))
+
+    def __radd__(self, other):
+        return self.__add__(other)
+
+    def __sub__(self, other):
+        if isinstance(other, IndexedTensor):
+            other_sig = other.signature
+            other_space = other.tensor.space
+            other_components = other.components
+        elif isinstance(other, Tensor):
+            other_sig = other.signature
+            other_space = other.space
+            other_components = other.components
+        else:
+            return NotImplemented
+        if other_space is not self.tensor.space:
+            raise ValueError("Tensores pertencem a TensorSpaces distintos.")
+        if other_sig != self.signature:
+            raise ValueError("Assinaturas diferentes; subtracao exige mesma assinatura.")
+        arr = self.components - other_components
+        tensor = Tensor(arr, self.tensor.space, signature=self.signature)
+        return IndexedTensor(tensor, tensor.components, tensor.signature, list(self.labels))
+
+    def __rsub__(self, other):
+        if not isinstance(other, IndexedTensor):
+            return NotImplemented
+        return other.__sub__(self)
+
 
 class Connection:
     def __init__(self, components):
