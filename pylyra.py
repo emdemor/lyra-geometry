@@ -819,9 +819,12 @@ class IndexedTensor:
         self.signature = signature
         self.labels = labels
 
-    def _repr_html_(self):
-        if hasattr(self.components, "_repr_html_"):
-            return self.components._repr_html_()
+    def _repr_latex_(self):
+        if hasattr(self.components, "_repr_latex_"):
+            return self.components._repr_latex_()
+        return sp.latex(self.components)
+
+    def __repr__(self):
         return repr(self.components)
 
     def __call__(self, *idx):
