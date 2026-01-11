@@ -59,7 +59,7 @@ class TensorSpace:
         self._tensor_count = 0
         self._label_count = 0
         self._registry = {}
-        self.metric = sp.Array(metric) if metric is not None else None
+        self.metric = Metric(sp.Array(metric), self, signature=(d, d), name="g", label="g") if metric is not None else None
         self._metric_inv = None
         if metric is not None:
             self._metric_inv = (
@@ -73,7 +73,7 @@ class TensorSpace:
         self.christoffel2 = None
         self.christoffel1 = None
         if self.metric is not None:
-            self.metric_tensor = self.register(Tensor(self.metric, self, signature=(d, d), name="g", label="g"))
+            self.metric_tensor = self.register(self.metric)
         if self._metric_inv is not None:
             self.metric_inv_tensor = self.register(
                 Tensor(self._metric_inv, self, signature=(u, u), name="g_inv", label="g_inv")
@@ -89,12 +89,12 @@ class TensorSpace:
         self._update_connection()
 
     def set_metric(self, metric, metric_inv=None):
-        self.metric = sp.Array(metric)
+        self.metric = Metric(sp.Array(metric), self, signature=(d, d), name="g", label="g")
         if metric_inv is None:
             self._metric_inv = sp.Array(sp.Matrix(metric).inv())
         else:
             self._metric_inv = sp.Array(metric_inv)
-        self.metric_tensor = self.register(Tensor(self.metric, self, signature=(d, d), name="g", label="g"))
+        self.metric_tensor = self.register(self.metric)
         self.metric_inv_tensor = self.register(
             Tensor(self._metric_inv, self, signature=(u, u), name="g_inv", label="g_inv")
         )
@@ -104,7 +104,7 @@ class TensorSpace:
     @property
     def metric_inv(self):
         if self._metric_inv is None and self.metric is not None:
-            self._metric_inv = sp.Array(sp.Matrix(self.metric).inv())
+            self._metric_inv = sp.Array(sp.Matrix(self.metric.components).inv())
             self.metric_inv_tensor = self.register(
                 Tensor(self._metric_inv, self, signature=(u, u), name="g_inv", label="g_inv")
             )
@@ -181,7 +181,7 @@ class TensorSpace:
             self.christoffel1 = None
             return
 
-        g = self.metric
+        g = self.metric.components
         coords = self.coords
         dim = self.dim
         self._detg = sp.simplify(sp.Matrix(g).det())
@@ -212,7 +212,7 @@ class TensorSpace:
 
         dim = self.dim
         coords = self.coords
-        g = self.metric
+        g = self.metric.components
         g_inv = self.metric_inv
         phi = self.scale.expr if isinstance(self.scale, Tensor) else self.scale
         M = self.nonmetricity
@@ -617,6 +617,10 @@ class Tensor:
 
         A = self.as_signature(tuple(target_sig), simplify=False)
         return IndexedTensor(self, A, tuple(target_sig), labels)
+
+
+class Metric(Tensor):
+    pass
 
 
 class IndexedTensor:
