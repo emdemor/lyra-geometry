@@ -2,17 +2,137 @@ import itertools
 import sympy as sp
 
 
-class Up:
+class Index:
+    def __init__(self, name):
+        self.name = str(name)
+
+    def __repr__(self):
+        return self.name
+
+
+class _NoLabel:
     pass
+
+
+NO_LABEL = _NoLabel()
+
+
+class UpIndex:
+    def __init__(self, label=NO_LABEL):
+        self.label = label
+
+    def __repr__(self):
+        return f"^{self.label}"
+
+
+class DownIndex:
+    def __init__(self, label=NO_LABEL):
+        self.label = label
+
+    def __repr__(self):
+        return f"_{self.label}"
+
+
+class Up:
+    def __call__(self, label=NO_LABEL):
+        return UpIndex(label)
 
 
 class Down:
-    pass
+    def __call__(self, label=NO_LABEL):
+        return DownIndex(label)
 
 
 u = Up()
 
 d = Down()
+
+
+class ConnectionStrategy:
+    def build(self, space):
+        raise NotImplementedError
+
+
+class CurvatureStrategy:
+    def build(self, space, gamma_components):
+        raise NotImplementedError
+
+
+class LyraConnectionStrategy(ConnectionStrategy):
+    def build(self, space):
+        if space.metric is None:
+            return None
+
+        dim = space.dim
+        coords = space.coords
+        g = space.metric.components
+        g_inv = space.metric_inv
+        phi = space.scale.expr if isinstance(space.scale, Tensor) else space.scale
+        M = space.nonmetricity
+        tau = space.torsion
+        chris = space.christoffel2
+
+        def connection_element(b, n, l):
+            return (
+                1 / phi * chris[b, n, l]
+                - sp.Rational(1, 2) * M(u, d, d)[b, n, l]
+                + 1 / (phi) * (
+                    sp.KroneckerDelta(b, n) * 1 / phi * sp.diff(phi, coords[l])
+                    - sum(1 / phi * g[n, l] * g_inv[b, s] * sp.diff(phi, coords[s]) for s in range(dim))
+                )
+                + sp.Rational(1, 2) * sum(
+                    g_inv[m, b] * (
+                        tau(d, d, d)[l, m, n] - tau(d, d, d)[n, l, m] - tau(d, d, d)[m, l, n]
+                    )
+                    for m in range(dim)
+                )
+            )
+
+        return table(connection_element, dim=dim, rank=3)
+
+
+class LyraCurvatureStrategy(CurvatureStrategy):
+    def build(self, space, gamma_components):
+        if gamma_components is None or space.metric is None:
+            return None, None, None, None
+
+        dim = space.dim
+        coords = space.coords
+        Gamma = gamma_components
+        phi = space.phi.expr if isinstance(space.phi, Tensor) else space.phi
+
+        def curvature_element(l, a, m, n):
+            return (
+                1 / (phi**2) * sp.diff(phi * Gamma[l, a, n], coords[m])
+                - 1 / (phi**2) * sp.diff(phi * Gamma[l, a, m], coords[n])
+                + sum(Gamma[r, a, n] * Gamma[l, r, m] for r in range(dim))
+                - sum(Gamma[r, a, m] * Gamma[l, r, n] for r in range(dim))
+            )
+
+        Riem = space.from_function(curvature_element, signature=(u, d, d, d), name="Riemann", label="R")
+
+        def ricci_element(a, m):
+            return sp.simplify(sum(Riem(u, d, d, d).comp[l, a, m, l] for l in range(dim)))
+
+        Ricc = space.from_function(ricci_element, signature=(d, d), name="Ricci", label="Ric")
+
+        g_inv = space.metric_inv
+        scalar_R = sp.simplify(sum(g_inv[a, b] * Ricc.comp[a, b] for a in range(dim) for b in range(dim)))
+
+        def einstein_element(a, b):
+            return sp.simplify(Ricc.comp[a, b] - sp.Rational(1, 2) * space.g.components[a, b] * scalar_R)
+
+        Ein = space.from_function(einstein_element, signature=(d, d), name="Einstein", label="G")
+        scalar_curvature = space.scalar(scalar_R, name="R", label="R")
+        return Riem, Ricc, Ein, scalar_curvature
+
+
+class FixedConnectionStrategy(ConnectionStrategy):
+    def __init__(self, connection):
+        self.connection = sp.Array(connection) if connection is not None else None
+
+    def build(self, space):
+        return self.connection
 
 
 def _norm_sig(sig, rank):
@@ -44,7 +164,16 @@ def table(func, dim, rank):
 
 
 class TensorSpace:
-    def __init__(self, dim, coords, metric=None, metric_inv=None, connection=None):
+    def __init__(
+        self,
+        dim,
+        coords,
+        metric=None,
+        metric_inv=None,
+        connection=None,
+        connection_strategy=None,
+        curvature_strategy=None,
+    ):
         self.dim = dim
         self.coords = tuple(coords)
         self._tensor_count = 0
@@ -69,6 +198,11 @@ class TensorSpace:
             self.metric_inv_tensor = self.register(
                 Tensor(self._metric_inv, self, signature=(u, u), name="g_inv", label="g_inv")
             )
+        if connection is not None and connection_strategy is None:
+            self.connection_strategy = FixedConnectionStrategy(connection)
+        else:
+            self.connection_strategy = connection_strategy or LyraConnectionStrategy()
+        self.curvature_strategy = curvature_strategy or LyraCurvatureStrategy()
         self.gamma = Connection(connection) if connection is not None else Connection(None)
         self.scale = self.scalar(1, name="phi", label="phi")
         self.phi = self.scale
@@ -128,6 +262,7 @@ class TensorSpace:
         return self._registry.get(name)
 
     def set_connection(self, connection):
+        self.connection_strategy = FixedConnectionStrategy(connection)
         self.gamma = Connection(connection)
 
     def set_scale(self, phi=None, coord_index=None):
@@ -195,77 +330,24 @@ class TensorSpace:
         self.christoffel2 = sp.Array(chris2)
 
     def _update_connection(self):
-        if self.metric is None:
+        if self.connection_strategy is None:
             self.gamma = Connection(None)
             return
-
-        dim = self.dim
-        coords = self.coords
-        g = self.metric.components
-        g_inv = self.metric_inv
-        phi = self.scale.expr if isinstance(self.scale, Tensor) else self.scale
-        M = self.nonmetricity
-        tau = self.torsion
-        chris = self.christoffel2
-
-        def connection_element(b, n, l):
-            return (
-                1 / phi * chris[b, n, l]
-                - sp.Rational(1, 2) * M(u, d, d)[b, n, l]
-                + 1 / (phi) * (
-                    sp.KroneckerDelta(b, n) * 1 / phi * sp.diff(phi, coords[l])
-                    - sum(1 / phi * g[n, l] * g_inv[b, s] * sp.diff(phi, coords[s]) for s in range(dim))
-                )
-                + sp.Rational(1, 2) * sum(
-                    g_inv[m, b] * (
-                        tau(d, d, d)[l, m, n] - tau(d, d, d)[n, l, m] - tau(d, d, d)[m, l, n]
-                    )
-                    for m in range(dim)
-                )
-            )
-
-        Gamma = table(connection_element, dim=dim, rank=3)
-        self.gamma = Connection(Gamma)
+        Gamma = self.connection_strategy.build(self)
+        self.gamma = Connection(Gamma) if Gamma is not None else Connection(None)
 
     def _update_riemann(self):
-        if self.gamma.components is None or self.metric is None:
+        if self.curvature_strategy is None:
             self.riemann = None
             self.ricci = None
             self.einstein = None
             self.scalar_curvature = None
             return
-
-        dim = self.dim
-        coords = self.coords
-        Gamma = self.gamma.components
-        phi = self.phi.expr if isinstance(self.phi, Tensor) else self.phi
-
-        def curvature_element(l, a, m, n):
-            return (
-                1 / (phi**2) * sp.diff(phi * Gamma[l, a, n], coords[m])
-                - 1 / (phi**2) * sp.diff(phi * Gamma[l, a, m], coords[n])
-                + sum(Gamma[r, a, n] * Gamma[l, r, m] for r in range(dim))
-                - sum(Gamma[r, a, m] * Gamma[l, r, n] for r in range(dim))
-            )
-
-        Riem = self.from_function(curvature_element, signature=(u, d, d, d), name="Riemann", label="R")
-
-        def ricci_element(a, m):
-            return sp.simplify(sum(Riem(u, d, d, d).comp[l, a, m, l] for l in range(dim)))
-
-        Ricc = self.from_function(ricci_element, signature=(d, d), name="Ricci", label="Ric")
-
-        g_inv = self.metric_inv
-        scalar_R = sp.simplify(sum(g_inv[a, b] * Ricc.comp[a, b] for a in range(dim) for b in range(dim)))
-
-        def einstein_element(a, b):
-            return sp.simplify(Ricc.comp[a, b] - sp.Rational(1, 2) * self.g.components[a, b] * scalar_R)
-
-        Ein = self.from_function(einstein_element, signature=(d, d), name="Einstein", label="G")
-        self.riemann = Riem
-        self.ricci = Ricc
-        self.einstein = Ein
-        self.scalar_curvature = self.scalar(scalar_R, name="R", label="R")
+        riem, ricc, ein, scalar = self.curvature_strategy.build(self, self.gamma.components)
+        self.riemann = riem
+        self.ricci = ricc
+        self.einstein = ein
+        self.scalar_curvature = scalar
 
     def update(self, include=None, exclude=()):
         available = {
@@ -503,6 +585,22 @@ class Tensor:
         arr = self.as_signature(sig, simplify=False)
         return Tensor(arr, self.space, signature=sig, name=self.name, label=self.label)
 
+    def __getitem__(self, indices):
+        if not isinstance(indices, tuple):
+            indices = (indices,)
+        if len(indices) != self.rank:
+            raise ValueError("Numero de indices nao bate com o rank do tensor.")
+        up = [None] * self.rank
+        down = [None] * self.rank
+        for i, idx in enumerate(indices):
+            if isinstance(idx, UpIndex):
+                up[i] = idx.label
+            elif isinstance(idx, DownIndex):
+                down[i] = idx.label
+            else:
+                raise TypeError("Use u(x) ou d(x) para indexar o tensor.")
+        return self.idx(up=up, down=down)
+
     def __add__(self, other):
         if self.rank == 0:
             return self._as_scalar() + other
@@ -688,6 +786,22 @@ class IndexedTensor:
         self.signature = signature
         self.labels = labels
 
+    def __mul__(self, other):
+        if isinstance(other, IndexedTensor):
+            space = self.tensor.space
+            if other.tensor.space is not space:
+                raise ValueError("Tensores pertencem a TensorSpaces distintos.")
+            return space.contract(self, other)
+        return NotImplemented
+
+    def __rmul__(self, other):
+        if isinstance(other, IndexedTensor):
+            space = other.tensor.space
+            if self.tensor.space is not space:
+                raise ValueError("Tensores pertencem a TensorSpaces distintos.")
+            return space.contract(other, self)
+        return NotImplemented
+
 
 class Connection:
     def __init__(self, components):
@@ -717,21 +831,6 @@ class TensorFactory:
 
     def scalar(self, expr, name=None, label=None):
         return self.space.scalar(expr, name=name, label=label)
-
-
-class Index:
-    def __init__(self, name):
-        self.name = str(name)
-
-    def __repr__(self):
-        return self.name
-
-
-class _NoLabel:
-    pass
-
-
-NO_LABEL = _NoLabel()
 
 
 def _parse_label(label, space):
