@@ -49,9 +49,12 @@ class Down:
         return DownIndex(label)
 
 
-u = Up()
+U = Up()
 
-d = Down()
+D = Down()
+
+u = U
+d = D
 
 
 class ConnectionStrategy:
@@ -81,14 +84,14 @@ class LyraConnectionStrategy(ConnectionStrategy):
         def connection_element(b, n, l):
             return (
                 1 / phi * chris[b, n, l]
-                - sp.Rational(1, 2) * M(u, d, d)[b, n, l]
+                - sp.Rational(1, 2) * M(U, D, D)[b, n, l]
                 + 1 / (phi) * (
                     sp.KroneckerDelta(b, n) * 1 / phi * sp.diff(phi, coords[l])
                     - sum(1 / phi * g[n, l] * g_inv[b, s] * sp.diff(phi, coords[s]) for s in range(dim))
                 )
                 + sp.Rational(1, 2) * sum(
                     g_inv[m, b] * (
-                        tau(d, d, d)[l, m, n] - tau(d, d, d)[n, l, m] - tau(d, d, d)[m, l, n]
+                        tau(D, D, D)[l, m, n] - tau(D, D, D)[n, l, m] - tau(D, D, D)[m, l, n]
                     )
                     for m in range(dim)
                 )
@@ -115,12 +118,12 @@ class LyraCurvatureStrategy(CurvatureStrategy):
                 - sum(Gamma[r, a, m] * Gamma[l, r, n] for r in range(dim))
             )
 
-        Riem = space.from_function(curvature_element, signature=(u, d, d, d), name="Riemann", label="R")
+        Riem = space.from_function(curvature_element, signature=(U, D, D, D), name="Riemann", label="R")
 
         def ricci_element(a, m):
-            return sp.simplify(sum(Riem(u, d, d, d).comp[l, a, m, l] for l in range(dim)))
+            return sp.simplify(sum(Riem(U, D, D, D).comp[l, a, m, l] for l in range(dim)))
 
-        Ricc = space.from_function(ricci_element, signature=(d, d), name="Ricci", label="Ric")
+        Ricc = space.from_function(ricci_element, signature=(D, D), name="Ricci", label="Ric")
 
         g_inv = space.metric_inv
         scalar_R = sp.simplify(sum(g_inv[a, b] * Ricc.comp[a, b] for a in range(dim) for b in range(dim)))
@@ -128,7 +131,7 @@ class LyraCurvatureStrategy(CurvatureStrategy):
         def einstein_element(a, b):
             return sp.simplify(Ricc.comp[a, b] - sp.Rational(1, 2) * space.g.components[a, b] * scalar_R)
 
-        Ein = space.from_function(einstein_element, signature=(d, d), name="Einstein", label="G")
+        Ein = space.from_function(einstein_element, signature=(D, D), name="Einstein", label="G")
         scalar_curvature = space.scalar(scalar_R, name="R", label="R")
         return Riem, Ricc, Ein, scalar_curvature
 
@@ -146,18 +149,18 @@ def _norm_sig(sig, rank):
         raise ValueError(f"Assinatura tem tamanho {len(sig)} mas rank e {rank}.")
     out = []
     for s in sig:
-        if s in (u, Up, "u", "^", +1, True):
-            out.append(u)
-        elif s in (d, Down, "d", "_", -1, False):
-            out.append(d)
+        if s in (U, Up, "U", "u", "^", +1, True):
+            out.append(U)
+        elif s in (D, Down, "D", "d", "_", -1, False):
+            out.append(D)
         else:
-            raise ValueError(f"Elemento de assinatura invalido: {s!r}. Use u/d.")
+            raise ValueError(f"Elemento de assinatura invalido: {s!r}. Use U/D.")
     return tuple(out)
 
 
 def _validate_signature(signature, rank):
     if not isinstance(signature, (tuple, list)):
-        raise TypeError("signature deve ser tupla/lista, ex.: (u,d,d).")
+        raise TypeError("signature deve ser tupla/lista, ex.: (U,D,D).")
     if len(signature) != rank:
         raise ValueError(f"signature tem tamanho {len(signature)}, mas rank={rank}.")
     return _norm_sig(signature, rank)
@@ -185,7 +188,7 @@ class TensorSpace:
         self._tensor_count = 0
         self._label_count = 0
         self._registry = {}
-        self.metric = Metric(sp.Array(metric), self, signature=(d, d), name="g", label="g") if metric is not None else None
+        self.metric = Metric(sp.Array(metric), self, signature=(D, D), name="g", label="g") if metric is not None else None
         self._metric_inv = None
         if metric is not None:
             self._metric_inv = (
@@ -202,7 +205,7 @@ class TensorSpace:
             self.metric_tensor = self.register(self.metric)
         if self._metric_inv is not None:
             self.metric_inv_tensor = self.register(
-                Tensor(self._metric_inv, self, signature=(u, u), name="g_inv", label="g_inv")
+                Tensor(self._metric_inv, self, signature=(U, U), name="g_inv", label="g_inv")
             )
         if connection is not None and connection_strategy is None:
             self.connection_strategy = FixedConnectionStrategy(connection)
@@ -212,8 +215,8 @@ class TensorSpace:
         self.gamma = Connection(connection) if connection is not None else Connection(None)
         self.scale = self.scalar(1, name="phi", label="phi")
         self.phi = self.scale
-        self.torsion = self.zeros((d, d, d), name="tau", label="tau")
-        self.nonmetricity = self.zeros((u, d, d), name="M", label="M")
+        self.torsion = self.zeros((D, D, D), name="tau", label="tau")
+        self.nonmetricity = self.zeros((U, D, D), name="M", label="M")
         self.metric_compatible = None
         self.tensor = TensorFactory(self)
         self.riemann = None
@@ -223,14 +226,14 @@ class TensorSpace:
         self.update()
 
     def set_metric(self, metric, metric_inv=None):
-        self.metric = Metric(sp.Array(metric), self, signature=(d, d), name="g", label="g")
+        self.metric = Metric(sp.Array(metric), self, signature=(D, D), name="g", label="g")
         if metric_inv is None:
             self._metric_inv = sp.Array(sp.Matrix(metric).inv())
         else:
             self._metric_inv = sp.Array(metric_inv)
         self.metric_tensor = self.register(self.metric)
         self.metric_inv_tensor = self.register(
-            Tensor(self._metric_inv, self, signature=(u, u), name="g_inv", label="g_inv")
+            Tensor(self._metric_inv, self, signature=(U, U), name="g_inv", label="g_inv")
         )
 
     @property
@@ -238,7 +241,7 @@ class TensorSpace:
         if self._metric_inv is None and self.metric is not None:
             self._metric_inv = sp.Array(sp.Matrix(self.metric.components).inv())
             self.metric_inv_tensor = self.register(
-                Tensor(self._metric_inv, self, signature=(u, u), name="g_inv", label="g_inv")
+                Tensor(self._metric_inv, self, signature=(U, U), name="g_inv", label="g_inv")
             )
         return self._metric_inv
 
@@ -286,7 +289,7 @@ class TensorSpace:
                 raise ValueError("Torsion tensor pertence a outro TensorSpace.")
             self.torsion = torsion_tensor
         else:
-            self.torsion = self.from_array(torsion_tensor, signature=(d, d, d))
+            self.torsion = self.from_array(torsion_tensor, signature=(D, D, D))
         return self.torsion
 
     def set_nonmetricity(self, nonmetricity_tensor):
@@ -295,7 +298,7 @@ class TensorSpace:
                 raise ValueError("Non-metricity tensor pertence a outro TensorSpace.")
             self.nonmetricity = nonmetricity_tensor
         else:
-            self.nonmetricity = self.from_array(nonmetricity_tensor, signature=(u, d, d))
+            self.nonmetricity = self.from_array(nonmetricity_tensor, signature=(U, D, D))
         return self.nonmetricity
 
     def set_metric_compatibility(self, compatible=True):
@@ -330,7 +333,7 @@ class TensorSpace:
 
         g_inv = self.metric_inv
         chris2 = [[[
-            sum(g_inv[a, d] * self.christoffell1[d, b, c] for d in range(dim))
+            sum(g_inv[a, D] * self.christoffell1[D, b, c] for D in range(dim))
             for c in range(dim)
         ] for b in range(dim)] for a in range(dim)]
         self.christoffel2 = sp.Array(chris2)
@@ -454,7 +457,7 @@ class TensorSpace:
             idx_list = list(idx)
 
             for pos, s in enumerate(sig):
-                if s is u:
+                if s is U:
                     acc = 0
                     for m in range(dim):
                         idx_list[pos] = m
@@ -472,9 +475,9 @@ class TensorSpace:
 
         out = sp.ImmutableDenseNDimArray(out_flat, shape)
         if deriv_position == "append":
-            new_sig = sig + (d,)
+            new_sig = sig + (D,)
         else:
-            new_sig = (d,) + sig
+            new_sig = (D,) + sig
         return Tensor(out, self, signature=new_sig, name=None, label=tensor.label)
 
     def index(self, names):
@@ -570,7 +573,7 @@ class Tensor:
     def _repr_latex_(self):
         if self.rank == 0:
             return self._as_scalar()._repr_latex_()
-        sig = "".join("^" if s is u else "_" for s in self.signature)
+        sig = "".join("^" if s is U else "_" for s in self.signature)
         return r"\text{%s}(%s)\ \in\ \mathbb{R}^{%s}" % (self.label, self.components.shape, sig)
 
     def _repr_html_(self):
@@ -578,7 +581,7 @@ class Tensor:
             expr = self._as_scalar()
             if hasattr(expr, "_repr_html_"):
                 return expr._repr_html_()
-        sig = "".join("^" if s is u else "_" for s in self.signature)
+        sig = "".join("^" if s is U else "_" for s in self.signature)
         return (
             f"<div><b>{self.label}</b> &nbsp;"
             f"<code>shape={self.components.shape}</code> &nbsp;"
@@ -607,7 +610,7 @@ class Tensor:
             indices = (indices,)
         if any(isinstance(idx, (UpIndex, DownIndex)) for idx in indices):
             if not all(isinstance(idx, (UpIndex, DownIndex)) for idx in indices):
-                raise TypeError("Use apenas +a/-b (ou u(a)/d(b)) para indexar o tensor.")
+                raise TypeError("Use apenas +a/-b (ou U(a)/D(b)) para indexar o tensor.")
             if len(indices) != self.rank:
                 raise ValueError("Numero de indices nao bate com o rank do tensor.")
             up = [None] * self.rank
@@ -717,12 +720,12 @@ class Tensor:
             have = sig_cur[pos]
             if have is want:
                 continue
-            if have is d and want is u:
+            if have is D and want is U:
                 A = self._raise_at(A, pos)
-                sig_cur[pos] = u
-            elif have is u and want is d:
+                sig_cur[pos] = U
+            elif have is U and want is D:
                 A = self._lower_at(A, pos)
-                sig_cur[pos] = d
+                sig_cur[pos] = D
             else:
                 raise RuntimeError("Estado impossivel na conversao de assinatura.")
 
@@ -748,16 +751,16 @@ class Tensor:
         if s1 is s2:
             if not use_metric:
                 raise ValueError("Indices com mesma variancia exigem use_metric=True.")
-            if s1 is d:
+            if s1 is D:
                 A = self.as_signature(
-                    tuple(u if i == pos2 else s for i, s in enumerate(sig))
+                    tuple(U if i == pos2 else s for i, s in enumerate(sig))
                 )
-                sig[pos2] = u
+                sig[pos2] = U
             else:
                 A = self.as_signature(
-                    tuple(d if i == pos2 else s for i, s in enumerate(sig))
+                    tuple(D if i == pos2 else s for i, s in enumerate(sig))
                 )
-                sig[pos2] = d
+                sig[pos2] = D
 
         contracted = sp.tensorcontraction(A, (pos1, pos2))
         new_sig = tuple(s for i, s in enumerate(sig) if i not in (pos1, pos2))
@@ -787,10 +790,10 @@ class Tensor:
                 target_sig.append(self.signature[i])
                 labels.append(self.space._next_label())
             elif up_i is not None:
-                target_sig.append(u)
+                target_sig.append(U)
                 labels.append(self.space._next_label() if up_i is NO_LABEL else up_i)
             else:
-                target_sig.append(d)
+                target_sig.append(D)
                 labels.append(self.space._next_label() if down_i is NO_LABEL else down_i)
 
         A = self.as_signature(tuple(target_sig), simplify=False)
@@ -815,6 +818,14 @@ class IndexedTensor:
         self.components = components
         self.signature = signature
         self.labels = labels
+
+    def __call__(self, *idx):
+        if len(idx) != len(self.signature):
+            raise ValueError("Numero de indices nao bate com o rank do tensor.")
+        return self.components[idx]
+
+    def get(self, *idx):
+        return self.__call__(*idx)
 
     def __mul__(self, other):
         if isinstance(other, IndexedTensor):
@@ -1013,6 +1024,6 @@ def example_indexing():
     x, y = sp.symbols("x y")
     space = TensorSpace(2, (x, y))
     a, b, c = space.index("a b c")
-    T = space.generic("T", (u, d))
-    g = space.generic("g", (u, u))
-    return T[u(a), d(b)] * g[u(b), u(c)]
+    T = space.generic("T", (U, D))
+    g = space.generic("g", (U, U))
+    return T[U(a), D(b)] * g[U(b), U(c)]
