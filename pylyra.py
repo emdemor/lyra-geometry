@@ -323,19 +323,81 @@ class Tensor:
         self.label = label if label is not None else self.name
         self._cache = {self.signature: self.components}
 
+    def _as_scalar(self):
+        if self.rank != 0:
+            raise TypeError("Operacao escalar so e valida para tensores de rank 0.")
+        return sp.sympify(self.components[()])
+
+    @property
+    def expr(self):
+        return self._as_scalar()
+
+    def _sympy_(self):
+        return self._as_scalar()
+
     def _repr_latex_(self):
         return self.components._repr_latex_()
 
     def _repr_html_(self):
         if hasattr(self.components, "_repr_html_"):
             return self.components._repr_html_()
-        return f\"<pre>{sp.pretty(self.components)}</pre>\"
+        return f"<pre>{sp.pretty(self.components)}</pre>"
 
     def __call__(self, *sig):
         if len(sig) == 1 and isinstance(sig[0], (tuple, list)):
             sig = tuple(sig[0])
         arr = self.as_signature(sig, simplify=False)
         return Tensor(arr, self.space, signature=sig, name=self.name, label=self.label)
+
+    def __add__(self, other):
+        if self.rank == 0:
+            return self._as_scalar() + other
+        return NotImplemented
+
+    def __radd__(self, other):
+        if self.rank == 0:
+            return other + self._as_scalar()
+        return NotImplemented
+
+    def __sub__(self, other):
+        if self.rank == 0:
+            return self._as_scalar() - other
+        return NotImplemented
+
+    def __rsub__(self, other):
+        if self.rank == 0:
+            return other - self._as_scalar()
+        return NotImplemented
+
+    def __mul__(self, other):
+        if self.rank == 0:
+            return self._as_scalar() * other
+        return NotImplemented
+
+    def __rmul__(self, other):
+        if self.rank == 0:
+            return other * self._as_scalar()
+        return NotImplemented
+
+    def __truediv__(self, other):
+        if self.rank == 0:
+            return self._as_scalar() / other
+        return NotImplemented
+
+    def __rtruediv__(self, other):
+        if self.rank == 0:
+            return other / self._as_scalar()
+        return NotImplemented
+
+    def __pow__(self, power):
+        if self.rank == 0:
+            return self._as_scalar() ** power
+        return NotImplemented
+
+    def __neg__(self):
+        if self.rank == 0:
+            return -self._as_scalar()
+        return NotImplemented
 
     def __getitem__(self, idx):
         return self.components[idx]
