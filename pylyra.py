@@ -85,8 +85,10 @@ class TensorSpace:
         self.nonmetricity = self.zeros((u, d, d), name="M", label="M")
         self.metric_compatible = None
         self.tensor = TensorFactory(self)
-        self._update_metric_related()
-        self._update_connection()
+        self.riemann = None
+        self.ricci = None
+        self.einstein = None
+        self.update()
 
     def set_metric(self, metric, metric_inv=None):
         self.metric = Metric(sp.Array(metric), self, signature=(d, d), name="g", label="g")
@@ -98,8 +100,6 @@ class TensorSpace:
         self.metric_inv_tensor = self.register(
             Tensor(self._metric_inv, self, signature=(u, u), name="g_inv", label="g_inv")
         )
-        self._update_metric_related()
-        self._update_connection()
 
     @property
     def metric_inv(self):
@@ -145,7 +145,6 @@ class TensorSpace:
             phi = sp.Function("phi")(self.coords[coord_index])
         self.scale = self.scalar(phi, name="phi", label="phi")
         self.phi = self.scale
-        self._update_connection()
         return self.scale
 
     def set_torsion(self, torsion_tensor):
@@ -155,7 +154,6 @@ class TensorSpace:
             self.torsion = torsion_tensor
         else:
             self.torsion = self.from_array(torsion_tensor, signature=(d, d, d))
-        self._update_connection()
         return self.torsion
 
     def set_nonmetricity(self, nonmetricity_tensor):
@@ -165,7 +163,6 @@ class TensorSpace:
             self.nonmetricity = nonmetricity_tensor
         else:
             self.nonmetricity = self.from_array(nonmetricity_tensor, signature=(u, d, d))
-        self._update_connection()
         return self.nonmetricity
 
     def set_metric_compatibility(self, compatible=True):
@@ -238,6 +235,68 @@ class TensorSpace:
         Gamma = table(connection_element, dim=dim)
         self.gamma = Connection(Gamma)
 
+    def _update_riemann(self):
+        if self.gamma.components is None or self.metric is None:
+            self.riemann = None
+            self.ricci = None
+            self.einstein = None
+            return
+
+        dim = self.dim
+        coords = self.coords
+        Gamma = self.gamma.components
+        phi = self.phi.expr if isinstance(self.phi, Tensor) else self.phi
+
+        def curvature_element(l, a, m, n):
+            return (
+                1 / (phi**2) * sp.diff(phi * Gamma[l, a, n], coords[m])
+                - 1 / (phi**2) * sp.diff(phi * Gamma[l, a, m], coords[n])
+                + sum(Gamma[r, a, n] * Gamma[l, r, m] for r in range(dim))
+                - sum(Gamma[r, a, m] * Gamma[l, r, n] for r in range(dim))
+            )
+
+        Riem = self.from_function(curvature_element, signature=(u, d, d, d), name="Riemann", label="R")
+
+        def ricci_element(a, m):
+            return sp.simplify(sum(Riem(u, d, d, d).comp[l, a, m, l] for l in range(dim)))
+
+        Ricc = self.from_function(ricci_element, signature=(d, d), name="Ricci", label="Ric")
+
+        g_inv = self.metric_inv
+        scalar_R = sp.simplify(sum(g_inv[a, b] * Ricc.comp[a, b] for a in range(dim) for b in range(dim)))
+
+        def einstein_element(a, b):
+            return sp.simplify(Ricc.comp[a, b] - sp.Rational(1, 2) * self.g.components[a, b] * scalar_R)
+
+        Ein = self.from_function(einstein_element, signature=(d, d), name="Einstein", label="G")
+        self.riemann = Riem
+        self.ricci = Ricc
+        self.einstein = Ein
+
+    def update(self, include=None, exclude=()):
+        available = {
+            "scale",
+            "metric",
+            "detg",
+            "christoffel",
+            "connection",
+            "riemann",
+            "ricci",
+            "einstein",
+        }
+        if include is None:
+            steps = set(available)
+        else:
+            steps = set(include)
+        steps -= set(exclude)
+
+        if "metric" in steps or "detg" in steps or "christoffel" in steps:
+            self._update_metric_related()
+        if "connection" in steps:
+            self._update_connection()
+        if "riemann" in steps or "ricci" in steps or "einstein" in steps:
+            self._update_riemann()
+
     def from_function(self, func, signature, name=None, label=None):
         rank = _infer_rank(func)
         signature = _validate_signature(signature, rank)
@@ -279,6 +338,10 @@ class TensorSpace:
         return self.register(Tensor(arr, self, signature=signature, name=name, label=label or name))
 
     def nabla(self, tensor, deriv_position="append"):
+        """
+        Derivada covariante de Lyra:
+        ∇_k T = (1/phi) ∂_k T + Σ Γ^{a_i}{}_{m k} T^{...m...} - Σ Γ^{m}{}_{b_j k} T_{...m...}
+        """
         if self.connection is None:
             raise ValueError("Defina a conexao (Gamma^a_{bc}) em TensorSpace.")
         if tensor.space is not self:
@@ -304,7 +367,8 @@ class TensorSpace:
             else:
                 raise ValueError("deriv_position deve ser 'append' ou 'prepend'.")
 
-            base = sp.diff(T[idx], coords[k])
+            phi = self.phi.expr if isinstance(self.phi, Tensor) else self.phi
+            base = (1 / phi) * sp.diff(T[idx], coords[k])
             idx_list = list(idx)
 
             for pos, s in enumerate(sig):
@@ -312,13 +376,13 @@ class TensorSpace:
                     acc = 0
                     for m in range(dim):
                         idx_list[pos] = m
-                        acc += Gamma[idx[pos], k, m] * T[tuple(idx_list)]
+                        acc += Gamma[idx[pos], m, k] * T[tuple(idx_list)]
                     base += acc
                 else:
                     acc = 0
                     for m in range(dim):
                         idx_list[pos] = m
-                        acc += Gamma[m, k, idx[pos]] * T[tuple(idx_list)]
+                        acc += Gamma[m, idx[pos], k] * T[tuple(idx_list)]
                     base -= acc
                 idx_list[pos] = idx[pos]
 
