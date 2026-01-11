@@ -1,5 +1,4 @@
 import itertools
-import inspect
 import sympy as sp
 
 
@@ -38,15 +37,7 @@ def _validate_signature(signature, rank):
     return _norm_sig(signature, rank)
 
 
-def table(func, dim):
-    sig = inspect.signature(func)
-    for p in sig.parameters.values():
-        if p.kind not in (
-            inspect.Parameter.POSITIONAL_ONLY,
-            inspect.Parameter.POSITIONAL_OR_KEYWORD,
-        ):
-            raise TypeError("Use apenas argumentos posicionais para indices.")
-    rank = len(sig.parameters)
+def table(func, dim, rank):
     shape = (dim,) * rank
     flat = [func(*idx) for idx in itertools.product(range(dim), repeat=rank)]
     return sp.ImmutableDenseNDimArray(flat, shape)
@@ -233,7 +224,7 @@ class TensorSpace:
                 )
             )
 
-        Gamma = table(connection_element, dim=dim)
+        Gamma = table(connection_element, dim=dim, rank=3)
         self.gamma = Connection(Gamma)
 
     def _update_riemann(self):
@@ -301,7 +292,7 @@ class TensorSpace:
             self._update_riemann()
 
     def from_function(self, func, signature, name=None, label=None):
-        rank = _infer_rank(func)
+        rank = len(signature)
         signature = _validate_signature(signature, rank)
         shape = (self.dim,) * rank
         flat = [func(*idx) for idx in itertools.product(range(self.dim), repeat=rank)]
@@ -456,11 +447,11 @@ class TensorSpace:
     def eval_contract(self, expr):
         tensors = []
         for token in expr.split():
-            name, up_labels, down_labels = _parse_tensor_token(token)
+            name, seq_labels = _parse_tensor_token(token)
             tensor = self.get(name)
             if tensor is None:
                 raise ValueError(f"Tensor '{name}' nao registrado.")
-            up_full, down_full = _expand_indices(tensor.rank, up_labels, down_labels)
+            up_full, down_full = _expand_indices(tensor.rank, seq_labels)
             indexed = tensor.idx(up=up_full, down=down_full)
             tensors.append(indexed)
         return self.contract(*tensors)
@@ -757,29 +748,48 @@ def _parse_label(label, space):
 
 def _parse_tensor_token(token):
     name = ""
-    up = []
-    down = []
+    seq = []
     i = 0
     while i < len(token) and token[i].isalnum():
         name += token[i]
         i += 1
     while i < len(token):
-        if token[i] == "^":
+        if token[i] in ("^", "_"):
+            var = token[i]
             i += 1
             if i < len(token) and token[i] == "{":
                 block, i = _read_block(token, i)
-                up = _split_indices(block)
-        elif token[i] == "_":
-            i += 1
-            if i < len(token) and token[i] == "{":
-                block, i = _read_block(token, i)
-                down = _split_indices(block)
+                labels = _split_indices(block)
+            else:
+                start = i
+                while i < len(token) and token[i].isalnum():
+                    i += 1
+                if start == i:
+                    raise ValueError("Esperado indice apos '^' ou '_'.")
+                labels = [token[start:i]]
+            for lab in labels:
+                seq.append((var, lab))
         else:
             i += 1
-    return name, up, down
+    return name, seq
 
 
-def _expand_indices(rank, up_labels, down_labels):
+def _expand_indices(rank, up_labels=None, down_labels=None):
+    if down_labels is None and up_labels is not None:
+        if all(isinstance(item, tuple) and len(item) == 2 for item in up_labels):
+            seq = list(up_labels)
+            if len(seq) != rank:
+                raise ValueError("Numero de indices nao bate com o rank do tensor.")
+            up_full = [None] * rank
+            down_full = [None] * rank
+            for i, (var, lab) in enumerate(seq):
+                if var == "^":
+                    up_full[i] = lab
+                elif var == "_":
+                    down_full[i] = lab
+                else:
+                    raise ValueError(f"Variancia invalida: {var!r}. Use '^' ou '_'.")
+            return up_full, down_full
     up_labels = [] if up_labels is None else list(up_labels)
     down_labels = [] if down_labels is None else list(down_labels)
     if len(up_labels) + len(down_labels) != rank:
@@ -827,14 +837,3 @@ class SpaceTime(TensorSpace):
 
 class Manifold(TensorSpace):
     pass
-
-
-def _infer_rank(func):
-    sig = inspect.signature(func)
-    for p in sig.parameters.values():
-        if p.kind not in (
-            inspect.Parameter.POSITIONAL_ONLY,
-            inspect.Parameter.POSITIONAL_OR_KEYWORD,
-        ):
-            raise TypeError("Use apenas argumentos posicionais para indices.")
-    return len(sig.parameters)
