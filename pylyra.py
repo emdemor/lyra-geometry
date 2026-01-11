@@ -420,12 +420,22 @@ class Tensor:
         return self._as_scalar()
 
     def _repr_latex_(self):
-        return self.components._repr_latex_()
+        if self.rank == 0:
+            return self._as_scalar()._repr_latex_()
+        sig = "".join("^" if s is u else "_" for s in self.signature)
+        return r"\text{%s}(%s)\ \in\ \mathbb{R}^{%s}" % (self.label, self.components.shape, sig)
 
     def _repr_html_(self):
-        if hasattr(self.components, "_repr_html_"):
-            return self.components._repr_html_()
-        return f"<pre>{sp.pretty(self.components)}</pre>"
+        if self.rank == 0:
+            expr = self._as_scalar()
+            if hasattr(expr, "_repr_html_"):
+                return expr._repr_html_()
+        sig = "".join("^" if s is u else "_" for s in self.signature)
+        return (
+            f"<div><b>{self.label}</b> &nbsp;"
+            f"<code>shape={self.components.shape}</code> &nbsp;"
+            f"<code>sig={sig}</code></div>"
+        )
 
     def __call__(self, *sig):
         if len(sig) == 1 and isinstance(sig[0], (tuple, list)):
