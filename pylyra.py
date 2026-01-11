@@ -80,6 +80,7 @@ class TensorSpace:
             )
         self.gamma = Connection(connection) if connection is not None else Connection(None)
         self.scale = self.scalar(1, name="phi", label="phi")
+        self.phi = self.scale
         self.torsion = self.zeros((d, d, d), name="tau", label="tau")
         self.nonmetricity = self.zeros((u, d, d), name="M", label="M")
         self.metric_compatible = None
@@ -143,6 +144,7 @@ class TensorSpace:
                 coord_index = 1 if len(self.coords) > 1 else 0
             phi = sp.Function("phi")(self.coords[coord_index])
         self.scale = self.scalar(phi, name="phi", label="phi")
+        self.phi = self.scale
         self._update_connection()
         return self.scale
 
