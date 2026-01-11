@@ -56,6 +56,9 @@ class TensorSpace:
     def __init__(self, dim, coords, metric=None, metric_inv=None, connection=None):
         self.dim = dim
         self.coords = tuple(coords)
+        self._tensor_count = 0
+        self._label_count = 0
+        self._registry = {}
         self.metric = sp.Array(metric) if metric is not None else None
         self._metric_inv = None
         if metric is not None:
@@ -65,14 +68,17 @@ class TensorSpace:
         self.metric_tensor = None
         self.metric_inv_tensor = None
         if self.metric is not None:
-            self.metric_tensor = Tensor(self.metric, self, signature=(d, d))
+            self.metric_tensor = self.register(Tensor(self.metric, self, signature=(d, d), name="g", label="g"))
         if self._metric_inv is not None:
-            self.metric_inv_tensor = Tensor(self._metric_inv, self, signature=(u, u))
-        self.connection = sp.Array(connection) if connection is not None else None
-        self.scale = None
-        self.torsion = None
-        self.nonmetricity = None
+            self.metric_inv_tensor = self.register(
+                Tensor(self._metric_inv, self, signature=(u, u), name="g_inv", label="g_inv")
+            )
+        self.gamma = Connection(connection) if connection is not None else Connection(None)
+        self.scale = self.scalar(1, name="phi", label="phi")
+        self.torsion = self.zeros((d, d, d), name="tau", label="tau")
+        self.nonmetricity = self.zeros((u, d, d), name="M", label="M")
         self.metric_compatible = None
+        self.tensor = TensorFactory(self)
 
     def set_metric(self, metric, metric_inv=None):
         self.metric = sp.Array(metric)
@@ -80,25 +86,48 @@ class TensorSpace:
             self._metric_inv = sp.Array(sp.Matrix(metric).inv())
         else:
             self._metric_inv = sp.Array(metric_inv)
-        self.metric_tensor = Tensor(self.metric, self, signature=(d, d))
-        self.metric_inv_tensor = Tensor(self._metric_inv, self, signature=(u, u))
+        self.metric_tensor = self.register(Tensor(self.metric, self, signature=(d, d), name="g", label="g"))
+        self.metric_inv_tensor = self.register(
+            Tensor(self._metric_inv, self, signature=(u, u), name="g_inv", label="g_inv")
+        )
 
     @property
     def metric_inv(self):
         if self._metric_inv is None and self.metric is not None:
             self._metric_inv = sp.Array(sp.Matrix(self.metric).inv())
-            self.metric_inv_tensor = Tensor(self._metric_inv, self, signature=(u, u))
+            self.metric_inv_tensor = self.register(
+                Tensor(self._metric_inv, self, signature=(u, u), name="g_inv", label="g_inv")
+            )
         return self._metric_inv
 
+    @property
+    def connection(self):
+        return self.gamma.components
+
+    def _next_tensor_name(self):
+        self._tensor_count += 1
+        return f"T{self._tensor_count}"
+
+    def _next_label(self):
+        self._label_count += 1
+        return f"_{self._label_count}"
+
+    def register(self, tensor):
+        self._registry[tensor.name] = tensor
+        return tensor
+
+    def get(self, name):
+        return self._registry.get(name)
+
     def set_connection(self, connection):
-        self.connection = sp.Array(connection)
+        self.gamma = Connection(connection)
 
     def set_scale(self, phi=None, coord_index=None):
         if phi is None:
             if coord_index is None:
                 coord_index = 1 if len(self.coords) > 1 else 0
             phi = sp.Function("phi")(self.coords[coord_index])
-        self.scale = self.scalar(phi)
+        self.scale = self.scalar(phi, name="phi", label="phi")
         return self.scale
 
     def set_torsion(self, torsion_tensor):
@@ -123,31 +152,45 @@ class TensorSpace:
         self.metric_compatible = bool(compatible)
         return self.metric_compatible
 
-    def from_function(self, func, signature):
+    def from_function(self, func, signature, name=None, label=None):
         rank = _infer_rank(func)
         signature = _validate_signature(signature, rank)
         shape = (self.dim,) * rank
         flat = [func(*idx) for idx in itertools.product(range(self.dim), repeat=rank)]
         arr = sp.ImmutableDenseNDimArray(flat, shape)
-        return Tensor(arr, self, signature=signature)
+        return self.register(Tensor(arr, self, signature=signature, name=name, label=label))
 
-    def from_array(self, array, signature):
+    def from_array(self, array, signature, name=None, label=None):
         if not isinstance(array, (sp.Array, sp.ImmutableDenseNDimArray)):
             array = sp.Array(array)
         rank = len(array.shape)
         signature = _validate_signature(signature, rank)
         if not isinstance(array, sp.ImmutableDenseNDimArray):
             array = sp.ImmutableDenseNDimArray(array)
-        return Tensor(array, self, signature=signature)
+        return self.register(Tensor(array, self, signature=signature, name=name, label=label))
 
-    def zeros(self, signature):
+    def zeros(self, signature, name=None, label=None):
         signature = _validate_signature(signature, len(signature))
         shape = (self.dim,) * len(signature)
         arr = sp.ImmutableDenseNDimArray([0] * (self.dim ** len(signature)), shape)
-        return Tensor(arr, self, signature=signature)
+        return self.register(Tensor(arr, self, signature=signature, name=name, label=label))
 
-    def scalar(self, expr):
-        return Tensor(sp.Array(expr), self, signature=())
+    def scalar(self, expr, name=None, label=None):
+        return self.register(Tensor(sp.Array(expr), self, signature=(), name=name, label=label))
+
+    def generic(self, name, signature, coords=None, label=None):
+        signature = _validate_signature(signature, len(signature))
+        coords = self.coords if coords is None else tuple(coords)
+        rank = len(signature)
+        shape = (self.dim,) * rank
+
+        def comp(*idx):
+            suf = "".join(map(str, idx))
+            return sp.Function(f"{name}{suf}")(*coords)
+
+        flat = [comp(*idx) for idx in itertools.product(range(self.dim), repeat=rank)]
+        arr = sp.ImmutableDenseNDimArray(flat, shape)
+        return self.register(Tensor(arr, self, signature=signature, name=name, label=label or name))
 
     def nabla(self, tensor, deriv_position="append"):
         if self.connection is None:
@@ -200,22 +243,99 @@ class TensorSpace:
             new_sig = sig + (d,)
         else:
             new_sig = (d,) + sig
-        return Tensor(out, self, signature=new_sig)
+        return Tensor(out, self, signature=new_sig, name=None, label=tensor.label)
+
+    def index(self, names):
+        if isinstance(names, str):
+            parts = [p for p in names.replace(",", " ").split() if p]
+        else:
+            parts = list(names)
+        out = []
+        for p in parts:
+            if p in ("_", ".", "empty", None):
+                out.append(None)
+            else:
+                out.append(Index(str(p)))
+        return out[0] if len(out) == 1 else tuple(out)
+
+    def contract(self, *indexed_tensors):
+        if not indexed_tensors:
+            raise ValueError("Informe ao menos um tensor indexado.")
+
+        tensors = [it if isinstance(it, IndexedTensor) else it.idx() for it in indexed_tensors]
+        A = tensors[0].components
+        sig = list(tensors[0].signature)
+        labels = list(tensors[0].labels)
+
+        for t in tensors[1:]:
+            A = sp.tensorproduct(A, t.components)
+            sig.extend(t.signature)
+            labels.extend(t.labels)
+
+        label_map = {}
+        for pos, (lab, s) in enumerate(zip(labels, sig)):
+            if lab is None:
+                continue
+            label_map.setdefault(lab, []).append((pos, s))
+
+        pairs = []
+        to_remove = set()
+        for lab, occ in label_map.items():
+            if len(occ) == 1:
+                continue
+            if len(occ) != 2:
+                raise ValueError(f"Indice {lab} aparece {len(occ)} vezes.")
+            (p1, s1), (p2, s2) = occ
+            if s1 is s2:
+                raise ValueError(f"Indice {lab} aparece com mesma variancia.")
+            pairs.append((p1, p2))
+            to_remove.update([p1, p2])
+
+        if pairs:
+            A = sp.tensorcontraction(A, *pairs)
+
+        new_sig = tuple(s for i, s in enumerate(sig) if i not in to_remove)
+        new_labels = [lab for i, lab in enumerate(labels) if i not in to_remove]
+        result = Tensor(A, self, signature=new_sig, name=None, label=None)
+        result._labels = new_labels
+        return result
+
+    def eval_contract(self, expr):
+        tensors = []
+        for token in expr.split():
+            name, up_labels, down_labels = _parse_tensor_token(token)
+            tensor = self.get(name)
+            if tensor is None:
+                raise ValueError(f"Tensor '{name}' nao registrado.")
+            up_full, down_full = _expand_indices(tensor.rank, up_labels, down_labels)
+            indexed = tensor.idx(up=up_full, down=down_full)
+            tensors.append(indexed)
+        return self.contract(*tensors)
 
 
 class Tensor:
-    def __init__(self, components, space, signature):
+    def __init__(self, components, space, signature, name=None, label=None):
         self.components = sp.Array(components)
         self.rank = self.components.rank()
         self.signature = _validate_signature(signature, self.rank)
         self.space = space
+        self.name = name if name is not None else space._next_tensor_name()
+        self.label = label if label is not None else self.name
         self._cache = {self.signature: self.components}
+
+    def _repr_latex_(self):
+        return self.components._repr_latex_()
+
+    def _repr_html_(self):
+        if hasattr(self.components, "_repr_html_"):
+            return self.components._repr_html_()
+        return f\"<pre>{sp.pretty(self.components)}</pre>\"
 
     def __call__(self, *sig):
         if len(sig) == 1 and isinstance(sig[0], (tuple, list)):
             sig = tuple(sig[0])
         arr = self.as_signature(sig, simplify=False)
-        return Tensor(arr, self.space, signature=sig)
+        return Tensor(arr, self.space, signature=sig, name=self.name, label=self.label)
 
     def __getitem__(self, idx):
         return self.components[idx]
@@ -306,6 +426,174 @@ class Tensor:
         contracted = sp.tensorcontraction(A, (pos1, pos2))
         new_sig = tuple(s for i, s in enumerate(sig) if i not in (pos1, pos2))
         return Tensor(contracted, self.space, signature=new_sig)
+
+    def idx(self, up=None, down=None):
+        rank = self.rank
+        if up is None and down is None:
+            up = [None] * rank
+            down = [None] * rank
+        elif up is None or down is None:
+            raise ValueError("Forneca up e down com o mesmo tamanho do rank.")
+
+        up = list(up)
+        down = list(down)
+        if len(up) != rank or len(down) != rank:
+            raise ValueError("up/down devem ter tamanho igual ao rank do tensor.")
+
+        labels = []
+        target_sig = []
+        for i in range(rank):
+            up_i = _parse_label(up[i], self.space)
+            down_i = _parse_label(down[i], self.space)
+            if up_i is not None and down_i is not None:
+                raise ValueError("Indice nao pode ser up e down na mesma posicao.")
+            if up_i is None and down_i is None:
+                target_sig.append(self.signature[i])
+                labels.append(self.space._next_label())
+            elif up_i is not None:
+                target_sig.append(u)
+                labels.append(self.space._next_label() if up_i is NO_LABEL else up_i)
+            else:
+                target_sig.append(d)
+                labels.append(self.space._next_label() if down_i is NO_LABEL else down_i)
+
+        A = self.as_signature(tuple(target_sig), simplify=False)
+        return IndexedTensor(self, A, tuple(target_sig), labels)
+
+
+class IndexedTensor:
+    def __init__(self, tensor, components, signature, labels):
+        self.tensor = tensor
+        self.components = components
+        self.signature = signature
+        self.labels = labels
+
+
+class Connection:
+    def __init__(self, components):
+        self.components = sp.Array(components) if components is not None else None
+
+    def __getitem__(self, idx):
+        if self.components is None:
+            raise ValueError("Conexao nao definida.")
+        return self.components[idx]
+
+
+class TensorFactory:
+    def __init__(self, space):
+        self.space = space
+
+    def from_function(self, func, signature, name=None, label=None):
+        return self.space.from_function(func, signature, name=name, label=label)
+
+    def from_array(self, array, signature, name=None, label=None):
+        return self.space.from_array(array, signature, name=name, label=label)
+
+    def generic(self, name, signature, coords=None, label=None):
+        return self.space.generic(name, signature, coords=coords, label=label)
+
+    def zeros(self, signature, name=None, label=None):
+        return self.space.zeros(signature, name=name, label=label)
+
+    def scalar(self, expr, name=None, label=None):
+        return self.space.scalar(expr, name=name, label=label)
+
+
+class Index:
+    def __init__(self, name):
+        self.name = str(name)
+
+    def __repr__(self):
+        return self.name
+
+
+class _NoLabel:
+    pass
+
+
+NO_LABEL = _NoLabel()
+
+
+def _parse_label(label, space):
+    if label is NO_LABEL:
+        return NO_LABEL
+    if label in ("_", ".", "empty", None):
+        return None
+    if isinstance(label, Index):
+        return label.name
+    if isinstance(label, str):
+        return label.strip()
+    return str(label)
+
+
+def _parse_tensor_token(token):
+    name = ""
+    up = []
+    down = []
+    i = 0
+    while i < len(token) and token[i].isalnum():
+        name += token[i]
+        i += 1
+    while i < len(token):
+        if token[i] == "^":
+            i += 1
+            if i < len(token) and token[i] == "{":
+                block, i = _read_block(token, i)
+                up = _split_indices(block)
+        elif token[i] == "_":
+            i += 1
+            if i < len(token) and token[i] == "{":
+                block, i = _read_block(token, i)
+                down = _split_indices(block)
+        else:
+            i += 1
+    return name, up, down
+
+
+def _expand_indices(rank, up_labels, down_labels):
+    up_labels = [] if up_labels is None else list(up_labels)
+    down_labels = [] if down_labels is None else list(down_labels)
+    if len(up_labels) + len(down_labels) != rank:
+        raise ValueError("Numero de indices nao bate com o rank do tensor.")
+    up_full = [None] * rank
+    down_full = [None] * rank
+    for i, lab in enumerate(up_labels):
+        up_full[i] = lab
+    for i, lab in enumerate(down_labels):
+        down_full[len(up_labels) + i] = lab
+    return up_full, down_full
+
+
+def _read_block(s, i):
+    if s[i] != "{":
+        raise ValueError("Esperado '{' na expressao de indices.")
+    depth = 0
+    start = i + 1
+    i += 1
+    while i < len(s):
+        if s[i] == "{":
+            depth += 1
+        elif s[i] == "}":
+            if depth == 0:
+                return s[start:i], i + 1
+            depth -= 1
+        i += 1
+    raise ValueError("Bloco de indices nao fechado.")
+
+
+def _split_indices(block):
+    out = []
+    for part in block.split(","):
+        part = part.strip()
+        if part in ("", "_", ".", "empty"):
+            out.append(NO_LABEL)
+        else:
+            out.append(part)
+    return out
+
+
+class SpaceTime(TensorSpace):
+    pass
 
 
 class Manifold(TensorSpace):
