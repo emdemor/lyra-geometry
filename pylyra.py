@@ -67,6 +67,11 @@ class TensorSpace:
             )
         self.metric_tensor = None
         self.metric_inv_tensor = None
+        self.g = None
+        self._detg = None
+        self.christoffell1 = None
+        self.christoffel2 = None
+        self.christoffel1 = None
         if self.metric is not None:
             self.metric_tensor = self.register(Tensor(self.metric, self, signature=(d, d), name="g", label="g"))
         if self._metric_inv is not None:
@@ -79,6 +84,8 @@ class TensorSpace:
         self.nonmetricity = self.zeros((u, d, d), name="M", label="M")
         self.metric_compatible = None
         self.tensor = TensorFactory(self)
+        self._update_metric_related()
+        self._update_connection()
 
     def set_metric(self, metric, metric_inv=None):
         self.metric = sp.Array(metric)
@@ -90,6 +97,8 @@ class TensorSpace:
         self.metric_inv_tensor = self.register(
             Tensor(self._metric_inv, self, signature=(u, u), name="g_inv", label="g_inv")
         )
+        self._update_metric_related()
+        self._update_connection()
 
     @property
     def metric_inv(self):
@@ -99,6 +108,12 @@ class TensorSpace:
                 Tensor(self._metric_inv, self, signature=(u, u), name="g_inv", label="g_inv")
             )
         return self._metric_inv
+
+    @property
+    def detg(self):
+        if self._detg is None and self.metric is not None:
+            self._detg = sp.simplify(sp.Matrix(self.metric).det())
+        return self._detg
 
     @property
     def connection(self):
@@ -128,6 +143,7 @@ class TensorSpace:
                 coord_index = 1 if len(self.coords) > 1 else 0
             phi = sp.Function("phi")(self.coords[coord_index])
         self.scale = self.scalar(phi, name="phi", label="phi")
+        self._update_connection()
         return self.scale
 
     def set_torsion(self, torsion_tensor):
@@ -137,6 +153,7 @@ class TensorSpace:
             self.torsion = torsion_tensor
         else:
             self.torsion = self.from_array(torsion_tensor, signature=(d, d, d))
+        self._update_connection()
         return self.torsion
 
     def set_nonmetricity(self, nonmetricity_tensor):
@@ -146,11 +163,78 @@ class TensorSpace:
             self.nonmetricity = nonmetricity_tensor
         else:
             self.nonmetricity = self.from_array(nonmetricity_tensor, signature=(u, d, d))
+        self._update_connection()
         return self.nonmetricity
 
     def set_metric_compatibility(self, compatible=True):
         self.metric_compatible = bool(compatible)
         return self.metric_compatible
+
+    def _update_metric_related(self):
+        self.g = self.metric
+        if self.metric is None:
+            self._detg = None
+            self.christoffell1 = None
+            self.christoffel2 = None
+            self.christoffel1 = None
+            return
+
+        g = self.metric
+        coords = self.coords
+        dim = self.dim
+        self._detg = sp.simplify(sp.Matrix(g).det())
+
+        chris1 = [[[
+            sp.Rational(1, 2)
+            * (
+                sp.diff(g[a, c], coords[b])
+                + sp.diff(g[a, b], coords[c])
+                - sp.diff(g[b, c], coords[a])
+            )
+            for c in range(dim)
+        ] for b in range(dim)] for a in range(dim)]
+        self.christoffell1 = sp.Array(chris1)
+        self.christoffel1 = self.christoffell1
+
+        g_inv = self.metric_inv
+        chris2 = [[[
+            sum(g_inv[a, d] * self.christoffell1[d, b, c] for d in range(dim))
+            for c in range(dim)
+        ] for b in range(dim)] for a in range(dim)]
+        self.christoffel2 = sp.Array(chris2)
+
+    def _update_connection(self):
+        if self.metric is None:
+            self.gamma = Connection(None)
+            return
+
+        dim = self.dim
+        coords = self.coords
+        g = self.metric
+        g_inv = self.metric_inv
+        phi = self.scale.expr if isinstance(self.scale, Tensor) else self.scale
+        M = self.nonmetricity
+        tau = self.torsion
+        chris = self.christoffel2
+
+        def connection_element(b, n, l):
+            return (
+                1 / phi * chris[b, n, l]
+                - sp.Rational(1, 2) * M(u, d, d)[b, n, l]
+                + 1 / (phi) * (
+                    sp.KroneckerDelta(b, n) * 1 / phi * sp.diff(phi, coords[l])
+                    - sum(1 / phi * g[n, l] * g_inv[b, s] * sp.diff(phi, coords[s]) for s in range(dim))
+                )
+                + sp.Rational(1, 2) * sum(
+                    g_inv[m, b] * (
+                        tau(d, d, d)[l, m, n] - tau(d, d, d)[n, l, m] - tau(d, d, d)[m, l, n]
+                    )
+                    for m in range(dim)
+                )
+            )
+
+        Gamma = table(connection_element, dim=dim)
+        self.gamma = Connection(Gamma)
 
     def from_function(self, func, signature, name=None, label=None):
         rank = _infer_rank(func)
