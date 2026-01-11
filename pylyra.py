@@ -839,6 +839,51 @@ class IndexedTensor:
     def get(self, *idx):
         return self.__call__(*idx)
 
+    def _resolve_position(self, idx):
+        if isinstance(idx, int):
+            if not (0 <= idx < len(self.signature)):
+                raise IndexError("Indice fora do rank do tensor.")
+            return idx
+        if isinstance(idx, (UpIndex, DownIndex)):
+            label = idx.label
+        elif isinstance(idx, Index):
+            label = idx.name
+        else:
+            label = str(idx).strip()
+        matches = [i for i, lab in enumerate(self.labels) if lab == label]
+        if len(matches) != 1:
+            raise ValueError(f"Indice {label!r} nao encontrado ou duplicado.")
+        return matches[0]
+
+    def _swap_axes(self, pos1, pos2):
+        perm = list(range(len(self.signature)))
+        perm[pos1], perm[pos2] = perm[pos2], perm[pos1]
+        return sp.permutedims(self.components, perm)
+
+    def symmetric(self, idx1, idx2):
+        pos1 = self._resolve_position(idx1)
+        pos2 = self._resolve_position(idx2)
+        if pos1 == pos2:
+            raise ValueError("Indices devem ser distintos.")
+        if self.signature[pos1] is not self.signature[pos2]:
+            raise ValueError("Indices com variancia diferente nao podem ser simetrizados.")
+        swapped = self._swap_axes(pos1, pos2)
+        arr = sp.Rational(1, 2) * (self.components + swapped)
+        tensor = Tensor(arr, self.tensor.space, signature=self.signature)
+        return IndexedTensor(tensor, tensor.components, tensor.signature, list(self.labels))
+
+    def antisymmetric(self, idx1, idx2):
+        pos1 = self._resolve_position(idx1)
+        pos2 = self._resolve_position(idx2)
+        if pos1 == pos2:
+            raise ValueError("Indices devem ser distintos.")
+        if self.signature[pos1] is not self.signature[pos2]:
+            raise ValueError("Indices com variancia diferente nao podem ser antissimetrizados.")
+        swapped = self._swap_axes(pos1, pos2)
+        arr = sp.Rational(1, 2) * (self.components - swapped)
+        tensor = Tensor(arr, self.tensor.space, signature=self.signature)
+        return IndexedTensor(tensor, tensor.components, tensor.signature, list(self.labels))
+
     def __mul__(self, other):
         if isinstance(other, IndexedTensor):
             space = self.tensor.space
