@@ -88,6 +88,7 @@ class TensorSpace:
         self.riemann = None
         self.ricci = None
         self.einstein = None
+        self.scalar_curvature = None
         self.update()
 
     def set_metric(self, metric, metric_inv=None):
@@ -240,6 +241,7 @@ class TensorSpace:
             self.riemann = None
             self.ricci = None
             self.einstein = None
+            self.scalar_curvature = None
             return
 
         dim = self.dim
@@ -272,6 +274,7 @@ class TensorSpace:
         self.riemann = Riem
         self.ricci = Ricc
         self.einstein = Ein
+        self.scalar_curvature = self.scalar(scalar_R, name="R", label="R")
 
     def update(self, include=None, exclude=()):
         available = {
