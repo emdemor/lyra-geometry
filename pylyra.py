@@ -57,23 +57,71 @@ class TensorSpace:
         self.dim = dim
         self.coords = tuple(coords)
         self.metric = sp.Array(metric) if metric is not None else None
-        if metric is not None and metric_inv is None:
-            self.metric_inv = sp.Array(sp.Matrix(metric).inv())
-        elif metric_inv is not None:
-            self.metric_inv = sp.Array(metric_inv)
-        else:
-            self.metric_inv = None
+        self._metric_inv = None
+        if metric is not None:
+            self._metric_inv = (
+                sp.Array(metric_inv) if metric_inv is not None else sp.Array(sp.Matrix(metric).inv())
+            )
+        self.metric_tensor = None
+        self.metric_inv_tensor = None
+        if self.metric is not None:
+            self.metric_tensor = Tensor(self.metric, self, signature=(d, d))
+        if self._metric_inv is not None:
+            self.metric_inv_tensor = Tensor(self._metric_inv, self, signature=(u, u))
         self.connection = sp.Array(connection) if connection is not None else None
+        self.scale = None
+        self.torsion = None
+        self.nonmetricity = None
+        self.metric_compatible = None
 
     def set_metric(self, metric, metric_inv=None):
         self.metric = sp.Array(metric)
         if metric_inv is None:
-            self.metric_inv = sp.Array(sp.Matrix(metric).inv())
+            self._metric_inv = sp.Array(sp.Matrix(metric).inv())
         else:
-            self.metric_inv = sp.Array(metric_inv)
+            self._metric_inv = sp.Array(metric_inv)
+        self.metric_tensor = Tensor(self.metric, self, signature=(d, d))
+        self.metric_inv_tensor = Tensor(self._metric_inv, self, signature=(u, u))
+
+    @property
+    def metric_inv(self):
+        if self._metric_inv is None and self.metric is not None:
+            self._metric_inv = sp.Array(sp.Matrix(self.metric).inv())
+            self.metric_inv_tensor = Tensor(self._metric_inv, self, signature=(u, u))
+        return self._metric_inv
 
     def set_connection(self, connection):
         self.connection = sp.Array(connection)
+
+    def set_scale(self, phi=None, coord_index=None):
+        if phi is None:
+            if coord_index is None:
+                coord_index = 1 if len(self.coords) > 1 else 0
+            phi = sp.Function("phi")(self.coords[coord_index])
+        self.scale = self.scalar(phi)
+        return self.scale
+
+    def set_torsion(self, torsion_tensor):
+        if isinstance(torsion_tensor, Tensor):
+            if torsion_tensor.space is not self:
+                raise ValueError("Torsion tensor pertence a outro TensorSpace.")
+            self.torsion = torsion_tensor
+        else:
+            self.torsion = self.from_array(torsion_tensor, signature=(d, d, d))
+        return self.torsion
+
+    def set_nonmetricity(self, nonmetricity_tensor):
+        if isinstance(nonmetricity_tensor, Tensor):
+            if nonmetricity_tensor.space is not self:
+                raise ValueError("Non-metricity tensor pertence a outro TensorSpace.")
+            self.nonmetricity = nonmetricity_tensor
+        else:
+            self.nonmetricity = self.from_array(nonmetricity_tensor, signature=(u, d, d))
+        return self.nonmetricity
+
+    def set_metric_compatibility(self, compatible=True):
+        self.metric_compatible = bool(compatible)
+        return self.metric_compatible
 
     def from_function(self, func, signature):
         rank = _infer_rank(func)
@@ -98,7 +146,10 @@ class TensorSpace:
         arr = sp.ImmutableDenseNDimArray([0] * (self.dim ** len(signature)), shape)
         return Tensor(arr, self, signature=signature)
 
-    def nabla(self, tensor, deriv_position="prepend"):
+    def scalar(self, expr):
+        return Tensor(sp.Array(expr), self, signature=())
+
+    def nabla(self, tensor, deriv_position="append"):
         if self.connection is None:
             raise ValueError("Defina a conexao (Gamma^a_{bc}) em TensorSpace.")
         if tensor.space is not self:
@@ -226,6 +277,39 @@ class Tensor:
 
     def nabla(self, deriv_position="append"):
         return self.space.nabla(self, deriv_position=deriv_position)
+
+    def contract(self, pos1, pos2, use_metric=True):
+        if pos1 == pos2:
+            raise ValueError("pos1 e pos2 devem ser indices distintos.")
+        if not (0 <= pos1 < self.rank and 0 <= pos2 < self.rank):
+            raise IndexError("pos1/pos2 fora do rank do tensor.")
+
+        sig = list(self.signature)
+        s1 = sig[pos1]
+        s2 = sig[pos2]
+        A = self.components
+
+        if s1 is s2:
+            if not use_metric:
+                raise ValueError("Indices com mesma variancia exigem use_metric=True.")
+            if s1 is d:
+                A = self.as_signature(
+                    tuple(u if i == pos2 else s for i, s in enumerate(sig))
+                )
+                sig[pos2] = u
+            else:
+                A = self.as_signature(
+                    tuple(d if i == pos2 else s for i, s in enumerate(sig))
+                )
+                sig[pos2] = d
+
+        contracted = sp.tensorcontraction(A, (pos1, pos2))
+        new_sig = tuple(s for i, s in enumerate(sig) if i not in (pos1, pos2))
+        return Tensor(contracted, self.space, signature=new_sig)
+
+
+class Manifold(TensorSpace):
+    pass
 
 
 def _infer_rank(func):
