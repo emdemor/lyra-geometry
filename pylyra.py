@@ -9,6 +9,12 @@ class Index:
     def __repr__(self):
         return self.name
 
+    def __pos__(self):
+        return UpIndex(self.name)
+
+    def __neg__(self):
+        return DownIndex(self.name)
+
 
 class _NoLabel:
     pass
@@ -582,24 +588,37 @@ class Tensor:
     def __call__(self, *sig):
         if len(sig) == 1 and isinstance(sig[0], (tuple, list)):
             sig = tuple(sig[0])
+        if sig and all(isinstance(s, (UpIndex, DownIndex)) for s in sig):
+            if len(sig) != self.rank:
+                raise ValueError("Numero de indices nao bate com o rank do tensor.")
+            up = [None] * self.rank
+            down = [None] * self.rank
+            for i, idx in enumerate(sig):
+                if isinstance(idx, UpIndex):
+                    up[i] = idx.label
+                else:
+                    down[i] = idx.label
+            return self.idx(up=up, down=down)
         arr = self.as_signature(sig, simplify=False)
         return Tensor(arr, self.space, signature=sig, name=self.name, label=self.label)
 
     def __getitem__(self, indices):
         if not isinstance(indices, tuple):
             indices = (indices,)
-        if len(indices) != self.rank:
-            raise ValueError("Numero de indices nao bate com o rank do tensor.")
-        up = [None] * self.rank
-        down = [None] * self.rank
-        for i, idx in enumerate(indices):
-            if isinstance(idx, UpIndex):
-                up[i] = idx.label
-            elif isinstance(idx, DownIndex):
-                down[i] = idx.label
-            else:
-                raise TypeError("Use u(x) ou d(x) para indexar o tensor.")
-        return self.idx(up=up, down=down)
+        if any(isinstance(idx, (UpIndex, DownIndex)) for idx in indices):
+            if not all(isinstance(idx, (UpIndex, DownIndex)) for idx in indices):
+                raise TypeError("Use apenas +a/-b (ou u(a)/d(b)) para indexar o tensor.")
+            if len(indices) != self.rank:
+                raise ValueError("Numero de indices nao bate com o rank do tensor.")
+            up = [None] * self.rank
+            down = [None] * self.rank
+            for i, idx in enumerate(indices):
+                if isinstance(idx, UpIndex):
+                    up[i] = idx.label
+                else:
+                    down[i] = idx.label
+            return self.idx(up=up, down=down)
+        return self.components[indices]
 
     def __add__(self, other):
         if self.rank == 0:
@@ -656,9 +675,6 @@ class Tensor:
         if self.rank == 0:
             return -self._as_scalar()
         return NotImplemented
-
-    def __getitem__(self, idx):
-        return self.components[idx]
 
     @property
     def comp(self):
