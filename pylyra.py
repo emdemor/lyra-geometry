@@ -828,9 +828,13 @@ class IndexedTensor:
         return repr(self.components)
 
     def __call__(self, *idx):
-        if len(idx) != len(self.signature):
+        rank = len(self.signature)
+        if len(idx) > rank:
             raise ValueError("Numero de indices nao bate com o rank do tensor.")
-        return self.components[idx]
+        if len(idx) == rank:
+            return self.components[idx]
+        slicer = idx + (slice(None),) * (rank - len(idx))
+        return self.components[slicer]
 
     def get(self, *idx):
         return self.__call__(*idx)
