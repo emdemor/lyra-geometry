@@ -175,15 +175,15 @@ def table(func, dim, rank):
 class TensorSpace:
     def __init__(
         self,
-        dim,
         coords,
+        dim=None,
         metric=None,
         metric_inv=None,
         connection=None,
         connection_strategy=None,
         curvature_strategy=None,
     ):
-        self.dim = dim
+        self.dim = dim if dim else len(coords)
         self.coords = tuple(coords)
         self._tensor_count = 0
         self._label_count = 0
