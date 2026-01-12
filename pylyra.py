@@ -630,9 +630,9 @@ class Tensor:
     def __getitem__(self, indices):
         if not isinstance(indices, tuple):
             indices = (indices,)
-        if any(isinstance(idx, (UpIndex, DownIndex)) for idx in indices):
-            if not all(isinstance(idx, (UpIndex, DownIndex)) for idx in indices):
-                raise TypeError("Use apenas +a/-b (ou U(a)/D(b)) para indexar o tensor.")
+        if any(isinstance(idx, (UpIndex, DownIndex, Index)) for idx in indices):
+            if not all(isinstance(idx, (UpIndex, DownIndex, Index)) for idx in indices):
+                raise TypeError("Use apenas a, +a/-b (ou U(a)/D(b)) para indexar o tensor.")
             if len(indices) != self.rank:
                 raise ValueError("Numero de indices nao bate com o rank do tensor.")
             up = [None] * self.rank
@@ -640,8 +640,10 @@ class Tensor:
             for i, idx in enumerate(indices):
                 if isinstance(idx, UpIndex):
                     up[i] = idx.label
-                else:
+                elif isinstance(idx, DownIndex):
                     down[i] = idx.label
+                else:
+                    up[i] = idx.name
             indexed = self.idx(up=up, down=down)
             labels = indexed.labels
             if len(set(labels)) != len(labels):
