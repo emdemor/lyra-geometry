@@ -827,6 +827,23 @@ class IndexedTensor:
     def __repr__(self):
         return repr(self.components)
 
+    def __eq__(self, other):
+        if isinstance(other, IndexedTensor):
+            other_sig = other.signature
+            other_space = other.tensor.space
+            other_components = other.components
+        elif isinstance(other, Tensor):
+            other_sig = other.signature
+            other_space = other.space
+            other_components = other.components
+        else:
+            return NotImplemented
+        if other_space is not self.tensor.space:
+            raise ValueError("Tensores pertencem a TensorSpaces distintos.")
+        if other_sig != self.signature:
+            raise ValueError("Assinaturas diferentes; igualdade exige mesma assinatura.")
+        return self.components == other_components
+
     def __call__(self, *idx):
         rank = len(self.signature)
         if len(idx) > rank:
