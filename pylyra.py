@@ -426,8 +426,15 @@ class TensorSpace:
         """
         if self.connection is None:
             raise ValueError("Defina a conexao (Gamma^a_{bc}) em TensorSpace.")
-        if tensor.space is not self:
-            raise ValueError("Tensor pertence a outro TensorSpace.")
+        if isinstance(tensor, Tensor):
+            if tensor.space is not self:
+                raise ValueError("Tensor pertence a outro TensorSpace.")
+        else:
+            try:
+                expr = sp.sympify(tensor)
+            except (TypeError, ValueError) as exc:
+                raise TypeError("nabla aceita Tensor ou expressao sympy.") from exc
+            tensor = Tensor(sp.Array(expr), self, signature=())
 
         dim = self.dim
         coords = self.coords
