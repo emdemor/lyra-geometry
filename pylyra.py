@@ -198,7 +198,6 @@ class TensorSpace:
         self.metric_inv_tensor = None
         self.g = None
         self._detg = None
-        self.christoffell1 = None
         self.christoffel2 = None
         self.christoffel1 = None
         if self.metric is not None:
@@ -309,7 +308,6 @@ class TensorSpace:
         self.g = self.metric
         if self.metric is None:
             self._detg = None
-            self.christoffell1 = None
             self.christoffel2 = None
             self.christoffel1 = None
             return
@@ -328,12 +326,11 @@ class TensorSpace:
             )
             for c in range(dim)
         ] for b in range(dim)] for a in range(dim)]
-        self.christoffell1 = sp.Array(chris1)
-        self.christoffel1 = self.christoffell1
+        self.christoffel1 = sp.Array(chris1)
 
         g_inv = self.metric_inv
         chris2 = [[[
-            sum(g_inv[a, D] * self.christoffell1[D, b, c] for D in range(dim))
+            sum(g_inv[a, D] * self.christoffel1[D, b, c] for D in range(dim))
             for c in range(dim)
         ] for b in range(dim)] for a in range(dim)]
         self.christoffel2 = sp.Array(chris2)
@@ -979,6 +976,16 @@ class IndexedTensor:
 class Connection:
     def __init__(self, components):
         self.components = sp.Array(components) if components is not None else None
+
+    def _repr_latex_(self):
+        if self.components is None:
+            return r"\text{Connection}(\varnothing)"
+        if hasattr(self.components, "_repr_latex_"):
+            return self.components._repr_latex_()
+        return sp.latex(self.components)
+
+    def _repr_html_(self):
+        return self._repr_latex_()
 
     def __getitem__(self, idx):
         if self.components is None:
