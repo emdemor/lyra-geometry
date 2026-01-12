@@ -617,7 +617,11 @@ class Tensor:
                     up[i] = idx.label
                 else:
                     down[i] = idx.label
-            return self.idx(up=up, down=down)
+            indexed = self.idx(up=up, down=down)
+            labels = indexed.labels
+            if len(set(labels)) != len(labels):
+                return self.space.contract(indexed)
+            return indexed
         return self.components[indices]
 
     def __add__(self, other):
