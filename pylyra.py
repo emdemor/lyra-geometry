@@ -711,7 +711,7 @@ class Tensor:
     def _lower_at(self, A, pos):
         if self.space.metric is None:
             raise ValueError("Metric nao definida para descer indices.")
-        TP = sp.tensorproduct(self.space.metric, A)
+        TP = sp.tensorproduct(self.space.metric.components, A)
         C = sp.tensorcontraction(TP, (1, pos + 2))
         return self._move_front_axis_to(C, pos)
 
