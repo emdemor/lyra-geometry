@@ -569,15 +569,9 @@ class Tensor:
 
     def _repr_latex_(self):
         if self.rank == 0:
-            return self._as_scalar()._repr_latex_()
-        sig = "".join("^" if s is U else "_" for s in self.signature)
-        return r"\text{%s}(%s)\ \in\ \mathbb{R}^{%s}" % (self.label, self.components.shape, sig)
-
-    def _repr_html_(self):
-        if self.rank == 0:
             expr = self._as_scalar()
-            if hasattr(expr, "_repr_html_"):
-                return expr._repr_html_()
+            if hasattr(expr, "_repr_latex_"):
+                return expr._repr_latex_()
             return sp.latex(expr)
         if hasattr(self.components, "_repr_latex_"):
             return self.components._repr_latex_()
