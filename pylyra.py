@@ -419,7 +419,7 @@ class TensorSpace:
         arr = sp.ImmutableDenseNDimArray(flat, shape)
         return self.register(Tensor(arr, self, signature=signature, name=name, label=label or name))
 
-    def nabla(self, tensor, deriv_position="append"):
+    def nabla(self, tensor, deriv_position="prepend"):
         """
         Derivada covariante de Lyra:
         ∇_k T = (1/phi) ∂_k T + Σ Γ^{a_i}{}_{m k} T^{...m...} - Σ Γ^{m}{}_{b_j k} T_{...m...}
@@ -653,6 +653,15 @@ class Tensor:
     def __mul__(self, other):
         if self.rank == 0:
             return self._as_scalar() * other
+        if isinstance(other, Tensor):
+            if other.rank == 0:
+                scaled = other._as_scalar() * self.components
+                return Tensor(scaled, self.space, signature=self.signature)
+            if other.space is not self.space:
+                raise ValueError("Tensores pertencem a TensorSpaces distintos.")
+            TP = sp.tensorproduct(self.components, other.components)
+            new_sig = self.signature + other.signature
+            return Tensor(TP, self.space, signature=new_sig)
         if isinstance(other, IndexedTensor) and hasattr(self, "_labels"):
             indexed = IndexedTensor(self, self.components, self.signature, list(self._labels))
             return self.space.contract(indexed, other)
@@ -661,6 +670,15 @@ class Tensor:
     def __rmul__(self, other):
         if self.rank == 0:
             return other * self._as_scalar()
+        if isinstance(other, Tensor):
+            if other.rank == 0:
+                scaled = other._as_scalar() * self.components
+                return Tensor(scaled, self.space, signature=self.signature)
+            if other.space is not self.space:
+                raise ValueError("Tensores pertencem a TensorSpaces distintos.")
+            TP = sp.tensorproduct(other.components, self.components)
+            new_sig = other.signature + self.signature
+            return Tensor(TP, self.space, signature=new_sig)
         if isinstance(other, IndexedTensor) and hasattr(self, "_labels"):
             indexed = IndexedTensor(self, self.components, self.signature, list(self._labels))
             return self.space.contract(other, indexed)
@@ -741,7 +759,7 @@ class Tensor:
         self._cache[target_signature] = A
         return A
 
-    def nabla(self, deriv_position="append"):
+    def nabla(self, deriv_position="prepend"):
         return self.space.nabla(self, deriv_position=deriv_position)
 
     def contract(self, pos1, pos2, use_metric=True):
@@ -924,11 +942,25 @@ class IndexedTensor:
         return IndexedTensor(tensor, tensor.components, tensor.signature, list(self.labels))
 
     def __mul__(self, other):
+        if isinstance(other, sp.Basic) and not isinstance(other, (Tensor, IndexedTensor)):
+            scaled = other * self.components
+            tensor = Tensor(scaled, self.tensor.space, signature=self.signature)
+            return IndexedTensor(tensor, tensor.components, tensor.signature, list(self.labels))
+        if isinstance(other, Tensor) and other.rank == 0:
+            scaled = other._as_scalar() * self.components
+            tensor = Tensor(scaled, self.tensor.space, signature=self.signature)
+            return IndexedTensor(tensor, tensor.components, tensor.signature, list(self.labels))
         if isinstance(other, IndexedTensor):
             space = self.tensor.space
             if other.tensor.space is not space:
                 raise ValueError("Tensores pertencem a TensorSpaces distintos.")
-            return space.contract(self, other)
+            if set(self.labels) & set(other.labels):
+                return space.contract(self, other)
+            TP = sp.tensorproduct(self.components, other.components)
+            new_sig = self.signature + other.signature
+            new_labels = list(self.labels) + list(other.labels)
+            tensor = Tensor(TP, space, signature=new_sig)
+            return IndexedTensor(tensor, tensor.components, tensor.signature, new_labels)
         if isinstance(other, Tensor) and hasattr(other, "_labels"):
             space = self.tensor.space
             if other.space is not space:
@@ -938,11 +970,25 @@ class IndexedTensor:
         return NotImplemented
 
     def __rmul__(self, other):
+        if isinstance(other, sp.Basic) and not isinstance(other, (Tensor, IndexedTensor)):
+            scaled = other * self.components
+            tensor = Tensor(scaled, self.tensor.space, signature=self.signature)
+            return IndexedTensor(tensor, tensor.components, tensor.signature, list(self.labels))
+        if isinstance(other, Tensor) and other.rank == 0:
+            scaled = other._as_scalar() * self.components
+            tensor = Tensor(scaled, self.tensor.space, signature=self.signature)
+            return IndexedTensor(tensor, tensor.components, tensor.signature, list(self.labels))
         if isinstance(other, IndexedTensor):
             space = other.tensor.space
             if self.tensor.space is not space:
                 raise ValueError("Tensores pertencem a TensorSpaces distintos.")
-            return space.contract(other, self)
+            if set(self.labels) & set(other.labels):
+                return space.contract(other, self)
+            TP = sp.tensorproduct(other.components, self.components)
+            new_sig = other.signature + self.signature
+            new_labels = list(other.labels) + list(self.labels)
+            tensor = Tensor(TP, space, signature=new_sig)
+            return IndexedTensor(tensor, tensor.components, tensor.signature, new_labels)
         if isinstance(other, Tensor) and hasattr(other, "_labels"):
             space = other.space
             if self.tensor.space is not space:
@@ -952,6 +998,10 @@ class IndexedTensor:
         return NotImplemented
 
     def __add__(self, other):
+        if isinstance(other, sp.Basic) and not isinstance(other, (Tensor, IndexedTensor)):
+            if len(self.signature) == 0:
+                return self.components[()] + other
+            return NotImplemented
         if isinstance(other, IndexedTensor):
             other_sig = other.signature
             other_space = other.tensor.space
