@@ -586,6 +586,10 @@ class Tensor:
     def expr(self):
         return self._as_scalar()
 
+    @property
+    def args(self):
+        return self._as_scalar().args
+
     def _sympy_(self):
         return self._as_scalar()
 
