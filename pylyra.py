@@ -820,6 +820,9 @@ class IndexedTensor:
     def __repr__(self):
         return repr(self.components)
 
+    def fmt(self):
+        return sp.expand(sp.simplify(self.components))
+
     def __eq__(self, other):
         if isinstance(other, IndexedTensor):
             other_sig = other.signature
