@@ -560,6 +560,16 @@ class Tensor:
             raise TypeError("Operacao escalar so e valida para tensores de rank 0.")
         return sp.sympify(self.components[()])
 
+    def fmt(self, expr=None):
+        if expr is None:
+            target = sp.expand(sp.simplify(self.components))
+            return Tensor(target, self.space, signature=self.signature, name=self.name, label=self.label)
+        if isinstance(expr, Tensor):
+            return expr.fmt()
+        if isinstance(expr, IndexedTensor):
+            return expr.fmt()
+        return sp.expand(sp.simplify(expr))
+
     @property
     def expr(self):
         return self._as_scalar()
@@ -820,8 +830,16 @@ class IndexedTensor:
     def __repr__(self):
         return repr(self.components)
 
-    def fmt(self):
-        return sp.expand(sp.simplify(self.components))
+    def fmt(self, expr=None):
+        if expr is None:
+            target = sp.expand(sp.simplify(self.components))
+            tensor = Tensor(target, self.tensor.space, signature=self.signature)
+            return IndexedTensor(tensor, tensor.components, tensor.signature, list(self.labels))
+        if isinstance(expr, Tensor):
+            return expr.fmt()
+        if isinstance(expr, IndexedTensor):
+            return expr.fmt()
+        return sp.expand(sp.simplify(expr))
 
     def __eq__(self, other):
         if isinstance(other, IndexedTensor):
