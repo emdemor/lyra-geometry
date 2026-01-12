@@ -574,6 +574,14 @@ class Tensor:
             return expr.fmt()
         return sp.expand(sp.simplify(expr))
 
+    def subs(self, *args, **kwargs):
+        if isinstance(self.components, (sp.Array, sp.ImmutableDenseNDimArray)):
+            flat = [v.subs(*args, **kwargs) for v in self.components]
+            target = sp.ImmutableDenseNDimArray(flat, self.components.shape)
+        else:
+            target = self.components.subs(*args, **kwargs)
+        return Tensor(target, self.space, signature=self.signature, name=self.name, label=self.label)
+
     @property
     def expr(self):
         return self._as_scalar()
@@ -866,6 +874,15 @@ class IndexedTensor:
         if isinstance(expr, IndexedTensor):
             return expr.fmt()
         return sp.expand(sp.simplify(expr))
+
+    def subs(self, *args, **kwargs):
+        if isinstance(self.components, (sp.Array, sp.ImmutableDenseNDimArray)):
+            flat = [v.subs(*args, **kwargs) for v in self.components]
+            target = sp.ImmutableDenseNDimArray(flat, self.components.shape)
+        else:
+            target = self.components.subs(*args, **kwargs)
+        tensor = Tensor(target, self.tensor.space, signature=self.signature)
+        return IndexedTensor(tensor, tensor.components, tensor.signature, list(self.labels))
 
     def __eq__(self, other):
         if isinstance(other, IndexedTensor):
