@@ -578,12 +578,10 @@ class Tensor:
             expr = self._as_scalar()
             if hasattr(expr, "_repr_html_"):
                 return expr._repr_html_()
-        sig = "".join("^" if s is U else "_" for s in self.signature)
-        return (
-            f"<div><b>{self.label}</b> &nbsp;"
-            f"<code>shape={self.components.shape}</code> &nbsp;"
-            f"<code>sig={sig}</code></div>"
-        )
+            return sp.latex(expr)
+        if hasattr(self.components, "_repr_latex_"):
+            return self.components._repr_latex_()
+        return sp.latex(self.components)
 
     def __call__(self, *sig):
         if len(sig) == 1 and isinstance(sig[0], (tuple, list)):
