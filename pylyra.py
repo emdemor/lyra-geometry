@@ -673,7 +673,19 @@ class Tensor:
 
     def __mul__(self, other):
         if self.rank == 0:
-            return self._as_scalar() * other
+            scalar = self._as_scalar()
+            if isinstance(other, Tensor):
+                if other.space is not self.space:
+                    raise ValueError("Tensores pertencem a TensorSpaces distintos.")
+                scaled = scalar * other.components
+                return Tensor(scaled, other.space, signature=other.signature)
+            if isinstance(other, IndexedTensor):
+                if other.tensor.space is not self.space:
+                    raise ValueError("Tensores pertencem a TensorSpaces distintos.")
+                scaled = scalar * other.components
+                tensor = Tensor(scaled, other.tensor.space, signature=other.signature)
+                return IndexedTensor(tensor, tensor.components, tensor.signature, list(other.labels))
+            return scalar * other
         if isinstance(other, Tensor):
             if other.rank == 0:
                 scaled = other._as_scalar() * self.components
