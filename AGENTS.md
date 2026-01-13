@@ -3,8 +3,7 @@
 ## Project Structure & Module Organization
 - `src/pylyra/core.py`: Core library code (tensor space, connections, curvature, and helpers).
 - `src/pylyra/__init__.py`: Public package exports and version.
-- `pylyra_sketch.py`: Experimental/legacy draft code and scratch implementations.
-- `example.ipynb`: Usage examples and exploratory calculations.
+- `examples/example.ipynb`: Usage examples and exploratory calculations.
 - `__pycache__/`: Local Python bytecode cache (ignore for commits).
 - `tests/`: Pytest smoke tests.
 
@@ -12,7 +11,7 @@
 - `python -m pip install -e .[dev]`: Install in editable mode with test deps.
 - `python -c "import pylyra"`: Quick import sanity check for the package.
 - `python -m pytest`: Run tests.
-- `jupyter notebook example.ipynb`: Run the notebook examples (if you use Jupyter).
+- `jupyter notebook examples/example.ipynb`: Run the notebook examples (if you use Jupyter).
 
 ## Coding Style & Naming Conventions
 - Use 4-space indentation and follow PEP 8 conventions.
