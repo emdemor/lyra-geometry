@@ -1,14 +1,8 @@
-# Byte-compiled / optimized / DLL files
 __pycache__/
-*.py[cod]
-
-# Jupyter Notebook
-.ipynb_checkpoints/
-
-# Virtual environments
+*.pyc
+.pytest_cache/
 .venv/
-venv/
-ENV/
-
-# OS artifacts
-.DS_Store
+dist/
+build/
+*.egg-info/
+.ipynb_checkpoints/

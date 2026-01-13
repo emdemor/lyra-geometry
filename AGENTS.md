@@ -1,14 +1,17 @@
 # Repository Guidelines
 
 ## Project Structure & Module Organization
-- `pylyra.py`: Core library code (tensor space, connections, curvature, and helpers).
+- `src/pylyra/core.py`: Core library code (tensor space, connections, curvature, and helpers).
+- `src/pylyra/__init__.py`: Public package exports and version.
 - `pylyra_sketch.py`: Experimental/legacy draft code and scratch implementations.
 - `example.ipynb`: Usage examples and exploratory calculations.
 - `__pycache__/`: Local Python bytecode cache (ignore for commits).
+- `tests/`: Pytest smoke tests.
 
 ## Build, Test, and Development Commands
-- `python -c "import pylyra"`: Quick import sanity check for the module.
-- `python -i pylyra.py`: Open a REPL with the module loaded for ad-hoc exploration.
+- `python -m pip install -e .[dev]`: Install in editable mode with test deps.
+- `python -c "import pylyra"`: Quick import sanity check for the package.
+- `python -m pytest`: Run tests.
 - `jupyter notebook example.ipynb`: Run the notebook examples (if you use Jupyter).
 
 ## Coding Style & Naming Conventions
@@ -18,8 +21,7 @@
 - No formatter or linter is configured; format consistently with existing code.
 
 ## Testing Guidelines
-- No automated tests are currently present.
-- If you add tests, keep them close to the module (e.g., `tests/test_tensor.py`) and make them runnable with `python -m pytest`.
+- Keep tests close to the module (e.g., `tests/test_tensor.py`) and make them runnable with `python -m pytest`.
 - Name tests descriptively (e.g., `test_raise_index_roundtrip`).
 
 ## Commit & Pull Request Guidelines
