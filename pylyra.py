@@ -571,8 +571,8 @@ class Tensor:
     def fmt(self, expr=None):
         if expr is None:
             if isinstance(self.components, (sp.Array, sp.ImmutableDenseNDimArray)):
-                flat = [sp.expand(sp.simplify(v)) for v in self.components]
-                target = sp.ImmutableDenseNDimArray(flat, self.components.shape)
+                arr = sp.ImmutableDenseNDimArray(self.components)
+                target = arr.applyfunc(lambda v: sp.expand(sp.simplify(v)))
             else:
                 target = sp.expand(sp.simplify(self.components))
             return Tensor(target, self.space, signature=self.signature, name=self.name, label=self.label)
@@ -901,8 +901,8 @@ class IndexedTensor:
     def fmt(self, expr=None):
         if expr is None:
             if isinstance(self.components, (sp.Array, sp.ImmutableDenseNDimArray)):
-                flat = [sp.expand(sp.simplify(v)) for v in self.components]
-                target = sp.ImmutableDenseNDimArray(flat, self.components.shape)
+                arr = sp.ImmutableDenseNDimArray(self.components)
+                target = arr.applyfunc(lambda v: sp.expand(sp.simplify(v)))
             else:
                 target = sp.expand(sp.simplify(self.components))
             tensor = Tensor(target, self.tensor.space, signature=self.signature)
