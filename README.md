@@ -1,18 +1,18 @@
-# Pylyra
+# Lyra Geometry
 
 Biblioteca em Python para geometria diferencial simbolica, com suporte a espacos tensoriais, conexoes e curvatura usando SymPy.
 
 ## Instalacao
 
 ```bash
-pip install pylyra
+pip install lyra-geometry
 ```
 
 ## Exemplo rapido
 
 ```python
 import sympy as sp
-from pylyra import TensorSpace, U, D
+from lyra_geometry import TensorSpace, U, D
 
 x, y = sp.symbols("x y")
 space = TensorSpace((x, y))

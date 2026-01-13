@@ -1,15 +1,15 @@
 # Repository Guidelines
 
 ## Project Structure & Module Organization
-- `src/pylyra/core.py`: Core library code (tensor space, connections, curvature, and helpers).
-- `src/pylyra/__init__.py`: Public package exports and version.
+- `src/lyra_geometry/core.py`: Core library code (tensor space, connections, curvature, and helpers).
+- `src/lyra_geometry/__init__.py`: Public package exports and version.
 - `examples/example.ipynb`: Usage examples and exploratory calculations.
 - `__pycache__/`: Local Python bytecode cache (ignore for commits).
 - `tests/`: Pytest smoke tests.
 
 ## Build, Test, and Development Commands
 - `python -m pip install -e .[dev]`: Install in editable mode with test deps.
-- `python -c "import pylyra"`: Quick import sanity check for the package.
+- `python -c "import lyra_geometry"`: Quick import sanity check for the package.
 - `python -m pytest`: Run tests.
 - `jupyter notebook examples/example.ipynb`: Run the notebook examples (if you use Jupyter).
 

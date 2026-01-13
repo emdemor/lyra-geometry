@@ -1,6 +1,6 @@
 import sympy as sp
 
-from pylyra import TensorSpace, U, D
+from lyra_geometry import TensorSpace, U, D
 
 
 def test_basic_tensor_space():

@@ -1,4 +1,4 @@
-"""Pylyra: symbolic differential geometry tools built on SymPy."""
+"""Lyra Geometry: symbolic differential geometry tools built on SymPy."""
 
 from .core import (
     Connection,
