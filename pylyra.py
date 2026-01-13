@@ -1,4 +1,5 @@
 import itertools
+import numbers
 import sympy as sp
 
 
@@ -598,6 +599,8 @@ class Tensor:
         return self._as_scalar().args
 
     def _sympy_(self):
+        if self.rank != 0:
+            raise sp.SympifyError(self)
         return self._as_scalar()
 
     def _repr_latex_(self):
@@ -686,6 +689,11 @@ class Tensor:
                 tensor = Tensor(scaled, other.tensor.space, signature=other.signature)
                 return IndexedTensor(tensor, tensor.components, tensor.signature, list(other.labels))
             return scalar * other
+        if isinstance(other, (numbers.Number, sp.Basic)) and not isinstance(
+            other, (Tensor, IndexedTensor)
+        ):
+            scaled = sp.sympify(other) * self.components
+            return Tensor(scaled, self.space, signature=self.signature)
         if isinstance(other, Tensor):
             if other.rank == 0:
                 scaled = other._as_scalar() * self.components
@@ -703,6 +711,11 @@ class Tensor:
     def __rmul__(self, other):
         if self.rank == 0:
             return other * self._as_scalar()
+        if isinstance(other, (numbers.Number, sp.Basic)) and not isinstance(
+            other, (Tensor, IndexedTensor)
+        ):
+            scaled = sp.sympify(other) * self.components
+            return Tensor(scaled, self.space, signature=self.signature)
         if isinstance(other, Tensor):
             if other.rank == 0:
                 scaled = other._as_scalar() * self.components
