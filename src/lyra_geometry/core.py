@@ -570,6 +570,9 @@ class Tensor:
 
     def fmt(self, expr=None):
         if expr is None:
+            if self.rank == 0:
+                target = sp.expand(sp.simplify(self._as_scalar()))
+                return Tensor(sp.Array(target), self.space, signature=self.signature, name=self.name, label=self.label)
             if isinstance(self.components, (sp.Array, sp.ImmutableDenseNDimArray)):
                 arr = sp.ImmutableDenseNDimArray(self.components)
                 target = arr.applyfunc(lambda v: sp.expand(sp.simplify(v)))
@@ -900,7 +903,9 @@ class IndexedTensor:
 
     def fmt(self, expr=None):
         if expr is None:
-            if isinstance(self.components, (sp.Array, sp.ImmutableDenseNDimArray)):
+            if self.tensor.rank == 0:
+                target = sp.expand(sp.simplify(self.tensor._as_scalar()))
+            elif isinstance(self.components, (sp.Array, sp.ImmutableDenseNDimArray)):
                 arr = sp.ImmutableDenseNDimArray(self.components)
                 target = arr.applyfunc(lambda v: sp.expand(sp.simplify(v)))
             else:
