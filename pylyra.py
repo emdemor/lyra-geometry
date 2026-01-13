@@ -997,7 +997,9 @@ class IndexedTensor:
         return IndexedTensor(tensor, tensor.components, tensor.signature, list(self.labels))
 
     def __mul__(self, other):
-        if isinstance(other, sp.Basic) and not isinstance(other, (Tensor, IndexedTensor)):
+        if isinstance(other, (numbers.Number, sp.Basic)) and not isinstance(
+            other, (Tensor, IndexedTensor)
+        ):
             scaled = other * self.components
             tensor = Tensor(scaled, self.tensor.space, signature=self.signature)
             return IndexedTensor(tensor, tensor.components, tensor.signature, list(self.labels))
@@ -1025,7 +1027,9 @@ class IndexedTensor:
         return NotImplemented
 
     def __rmul__(self, other):
-        if isinstance(other, sp.Basic) and not isinstance(other, (Tensor, IndexedTensor)):
+        if isinstance(other, (numbers.Number, sp.Basic)) and not isinstance(
+            other, (Tensor, IndexedTensor)
+        ):
             scaled = other * self.components
             tensor = Tensor(scaled, self.tensor.space, signature=self.signature)
             return IndexedTensor(tensor, tensor.components, tensor.signature, list(self.labels))
