@@ -1,5 +1,6 @@
 import sympy as sp
 
+import lyra_geometry as pl
 from lyra_geometry import Tensor, U, D
 
 
@@ -87,3 +88,43 @@ def test_sympy_tensor_connection_chain_contracts_multiple_labels(space_flat, coo
     mixed = expr * t[a, b] * s[c, a] * gamma[d, c, e]
     assert isinstance(mixed, Tensor)
     assert mixed.rank == 3
+
+def test_index_order():
+    """Compare terms using a matching component index order."""
+    x, y = sp.symbols("x y", real=True)
+    a = sp.Function("a")
+
+    st = pl.SpaceTime(
+        coords=(x, y),
+        metric=sp.diag(y * a(x) ** 2, -a(x) ** 2),
+    )
+
+    _, a, b, g, d, e, m, n, l, s, h, k = st.index(
+        "empty alpha beta gamma delta epsilon mu nu lambda sigma eta kappa"
+    )
+
+    st.set_scale(sp.Function("phi")(x))
+    st.update()
+
+    gamma = st.christoffel2
+    term_01 = st.tensor(
+        gamma[+s, -a, -n] * gamma[+l, -s, -m] - gamma[+s, -a, -m] * gamma[+l, -s, -n],
+        index=(-a, -n, +l, -m),
+    )
+
+    def term_2_element(a_idx, n_idx, l_idx, m_idx):
+        b_idx, g_idx, d_idx = st.index("beta gamma delta")
+        gmm = gamma[+b_idx, -g_idx, -d_idx]
+        return (
+            sum(gmm(s, a_idx, n_idx) * gmm(l_idx, s, m_idx) for s in range(st.dim))
+            - sum(gmm(s, a_idx, m_idx) * gmm(l_idx, s, n_idx) for s in range(st.dim))
+        )
+
+    term_02 = st.from_function(
+        term_2_element, signature=(pl.D, pl.D, pl.U, pl.D), name="RiemannianCurv", label="RR"
+    )
+
+    assert term_01[-a, -n, +l, -m](0, 0) == term_02[-a, -n, +l, -m](0, 0)
+    assert term_01[-a, -n, +l, -m](0, 1) == term_02[-a, -n, +l, -m](0, 1)
+    assert term_01[-a, -n, +l, -m](1, 0) == term_02[-a, -n, +l, -m](1, 0)
+    assert term_01[-a, -n, +l, -m](1, 1) == term_02[-a, -n, +l, -m](1, 1)

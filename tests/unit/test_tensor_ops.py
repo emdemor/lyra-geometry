@@ -1,7 +1,7 @@
 import pytest
 import sympy as sp
 
-from lyra_geometry import Tensor, U, D
+from lyra_geometry import Tensor, TensorSpace, U, D
 
 
 def test_index_infers_variance_from_tensor_signature(space_flat):
@@ -67,3 +67,56 @@ def test_subtraction_aligns_labels_before_combining(space_flat):
         (space_flat.dim, space_flat.dim),
     )
     assert diff.components == expected
+
+
+def test_contracted_connection_terms_follow_label_order(space_flat):
+    """Compare contracted terms after aligning axes explicitly."""
+    t, x, y, z = sp.symbols("t x y z", real=True)
+    a_func = sp.Function("a")
+    st = TensorSpace(
+        coords=(t, x, y, z),
+        metric=sp.diag(1, -a_func(t) ** 2, -a_func(t) ** 2, -a_func(t) ** 2),
+    )
+    _, a, b, g, d, e, m, n, l, s, h, k = st.index(
+        "empty alpha beta gamma delta epsilon mu nu lambda sigma eta kappa"
+    )
+    st.set_scale(sp.Function("phi")(t))
+    st.update()
+    gamma = st.christoffel2
+    expr1 = gamma[s, a, n] * gamma[l, s, m] - gamma[s, a, m] * gamma[l, s, n]
+
+    def teste(l_idx, a_idx, m_idx, n_idx):
+        gamma_local = st.christoffel2
+        return (
+            sum(gamma_local[s, a_idx, n_idx] * gamma_local[l_idx, s, m_idx] for s in range(st.dim))
+            - sum(gamma_local[s, a_idx, m_idx] * gamma_local[l_idx, s, n_idx] for s in range(st.dim))
+        )
+
+    expr2 = st.from_function(teste, signature=(U, D, D, D), name="RiemannianCurv", label="RR")
+    perm = [2, 0, 3, 1]  # (a, n, l, m) -> (l, a, m, n)
+    permuted = sp.permutedims(expr1.components, perm)
+    diff = sp.simplify(permuted - expr2.components)
+    assert diff == sp.ImmutableDenseNDimArray([0] * (st.dim**4), (st.dim,) * 4)
+
+
+def test_tensor_reorders_axes_by_explicit_index(space_flat):
+    """Reorder tensor axes to a caller-specified index order."""
+    a, b, c = space_flat.index("a b c")
+    t = space_flat.from_array([[1, 2], [3, 4]], signature=(U, D))
+    s = space_flat.from_array([[5, 6], [7, 8]], signature=(U, D))
+    expr = t[a, b] * s[c, a]
+    reordered = TensorSpace.tensor(space_flat, expr, index=(+c, -b))
+    expected = sp.permutedims(expr.components, (1, 0))
+    assert reordered.components == expected
+
+
+def test_tensor_factory_call_reorders_axes(space_flat):
+    """Allow st.tensor(...) to reorder axes via TensorFactory call."""
+    a, b, c = space_flat.index("a b c")
+    t = space_flat.from_array([[1, 2], [3, 4]], signature=(U, D))
+    s = space_flat.from_array([[5, 6], [7, 8]], signature=(U, D))
+    expr = t[a, b] * s[c, a]
+    reordered = TensorSpace.tensor(space_flat, expr, index=(+c, -b))
+    via_factory = space_flat.tensor(expr, index=(+c, -b))
+    assert via_factory.components == reordered.components
+

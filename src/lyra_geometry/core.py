@@ -406,6 +406,66 @@ class TensorSpace:
     def scalar(self, expr, name=None, label=None):
         return self.register(Tensor(sp.Array(expr), self, signature=(), name=name, label=label))
 
+    def tensor(self, tensor, index=None, name=None, label=None):
+        if isinstance(tensor, IndexedTensor):
+            base = Tensor(tensor.components, self, signature=tensor.signature, name=name, label=label)
+            base._labels = list(tensor.labels)
+        elif isinstance(tensor, Tensor):
+            if tensor.space is not self:
+                raise ValueError("Tensor pertence a outro TensorSpace.")
+            base = Tensor(tensor.components, self, signature=tensor.signature, name=name or tensor.name, label=label)
+            if hasattr(tensor, "_labels"):
+                base._labels = list(tensor._labels)
+        else:
+            raise TypeError("tensor deve ser Tensor ou IndexedTensor.")
+
+        if index is None:
+            return base
+
+        if not hasattr(base, "_labels"):
+            raise ValueError("Tensor nao possui rotulos para reordenar.")
+
+        if not isinstance(index, (tuple, list)):
+            index = (index,)
+        if len(index) != base.rank:
+            raise ValueError("Numero de indices nao bate com o rank do tensor.")
+
+        target_labels = []
+        target_sig = []
+        for idx in index:
+            if isinstance(idx, UpIndex):
+                target_labels.append(idx.label)
+                target_sig.append(U)
+            elif isinstance(idx, DownIndex):
+                target_labels.append(idx.label)
+                target_sig.append(D)
+            elif isinstance(idx, Index):
+                target_labels.append(idx.name)
+                target_sig.append(None)
+            else:
+                raise TypeError("Use apenas a, +a/-b (ou U(a)/D(b)) no index.")
+
+        if any(lab is None or lab is NO_LABEL for lab in target_labels):
+            raise ValueError("Indices devem ter rotulos explicitos para reordenacao.")
+
+        labels = list(base._labels)
+        if set(target_labels) != set(labels):
+            raise ValueError("Reordenacao exige os mesmos rotulos de indices.")
+
+        perm = [labels.index(lab) for lab in target_labels]
+        for pos, want in enumerate(target_sig):
+            if want is None:
+                continue
+            have = base.signature[perm[pos]]
+            if have is not want:
+                raise ValueError("Variancia incompatível na reordenacao.")
+
+        reordered = sp.permutedims(base.components, perm)
+        new_sig = tuple(base.signature[i] for i in perm)
+        result = Tensor(reordered, self, signature=new_sig, name=base.name, label=base.label)
+        result._labels = list(target_labels)
+        return result
+
     def generic(self, name, signature, coords=None, label=None):
         signature = _validate_signature(signature, len(signature))
         coords = self.coords if coords is None else tuple(coords)
@@ -1188,6 +1248,9 @@ class Connection:
 class TensorFactory:
     def __init__(self, space):
         self.space = space
+
+    def __call__(self, tensor, index=None, name=None, label=None):
+        return TensorSpace.tensor(self.space, tensor, index=index, name=name, label=label)
 
     def from_function(self, func, signature, name=None, label=None):
         return self.space.from_function(func, signature, name=name, label=label)
