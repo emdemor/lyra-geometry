@@ -47,3 +47,23 @@ def test_subtraction_of_contracted_tensors_returns_tensor(space_flat):
     expr = gamma[s, a, n] * gamma[l, s, m] - gamma[s, a, m] * gamma[l, s, n]
     assert isinstance(expr, Tensor)
     assert expr.rank == 4
+
+
+def test_subtraction_aligns_labels_before_combining(space_flat):
+    """Align labels so subtraction is invariant to index ordering."""
+    a, b, c = space_flat.index("a b c")
+    t = space_flat.from_array([[1, 2], [3, 4]], signature=(U, D))
+    s = space_flat.from_array([[5, 6], [7, 8]], signature=(U, D))
+    expr1 = t[a, b] * s[c, a]
+    expr2 = t[a, c] * s[b, a]
+    diff = expr1 - expr2
+    expected = sp.ImmutableDenseNDimArray(
+        [
+            sum(t.components[i, j] * s.components[k, i] for i in range(space_flat.dim))
+            - sum(t.components[i, k] * s.components[j, i] for i in range(space_flat.dim))
+            for j in range(space_flat.dim)
+            for k in range(space_flat.dim)
+        ],
+        (space_flat.dim, space_flat.dim),
+    )
+    assert diff.components == expected

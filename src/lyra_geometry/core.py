@@ -668,6 +668,21 @@ class Tensor:
                 raise ValueError("Tensores pertencem a TensorSpaces distintos.")
             if other.signature != self.signature:
                 raise ValueError("Assinaturas diferentes; soma exige mesma assinatura.")
+            labels = getattr(self, "_labels", None)
+            other_labels = getattr(other, "_labels", None)
+            if labels is not None or other_labels is not None:
+                if labels is None or other_labels is None:
+                    raise ValueError("Soma exige tensores com rotulos compatíveis.")
+                if set(labels) != set(other_labels):
+                    raise ValueError("Soma exige tensores com os mesmos rotulos.")
+                if labels != other_labels:
+                    perm = [other_labels.index(lab) for lab in labels]
+                    other_components = sp.permutedims(other.components, perm)
+                else:
+                    other_components = other.components
+                result = Tensor(self.components + other_components, self.space, signature=self.signature)
+                result._labels = list(labels)
+                return result
             return Tensor(self.components + other.components, self.space, signature=self.signature)
         return NotImplemented
 
@@ -684,6 +699,21 @@ class Tensor:
                 raise ValueError("Tensores pertencem a TensorSpaces distintos.")
             if other.signature != self.signature:
                 raise ValueError("Assinaturas diferentes; subtracao exige mesma assinatura.")
+            labels = getattr(self, "_labels", None)
+            other_labels = getattr(other, "_labels", None)
+            if labels is not None or other_labels is not None:
+                if labels is None or other_labels is None:
+                    raise ValueError("Subtracao exige tensores com rotulos compatíveis.")
+                if set(labels) != set(other_labels):
+                    raise ValueError("Subtracao exige tensores com os mesmos rotulos.")
+                if labels != other_labels:
+                    perm = [other_labels.index(lab) for lab in labels]
+                    other_components = sp.permutedims(other.components, perm)
+                else:
+                    other_components = other.components
+                result = Tensor(self.components - other_components, self.space, signature=self.signature)
+                result._labels = list(labels)
+                return result
             return Tensor(self.components - other.components, self.space, signature=self.signature)
         return NotImplemented
 
