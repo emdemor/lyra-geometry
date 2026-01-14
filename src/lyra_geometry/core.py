@@ -327,14 +327,14 @@ class TensorSpace:
             )
             for c in range(dim)
         ] for b in range(dim)] for a in range(dim)]
-        self.christoffel1 = sp.Array(chris1)
+        self.christoffel1 = ConnectionTensor(sp.Array(chris1), self, signature=(D, D, D), name="christoffel1")
 
         g_inv = self.metric_inv
         chris2 = [[[
             sum(g_inv[a, D] * self.christoffel1[D, b, c] for D in range(dim))
             for c in range(dim)
         ] for b in range(dim)] for a in range(dim)]
-        self.christoffel2 = sp.Array(chris2)
+        self.christoffel2 = ConnectionTensor(sp.Array(chris2), self, signature=(U, D, D), name="christoffel2")
 
     def _update_connection(self):
         if self.connection_strategy is None:
@@ -649,7 +649,10 @@ class Tensor:
                 elif isinstance(idx, DownIndex):
                     down[i] = idx.label
                 else:
-                    up[i] = idx.name
+                    if self.signature[i] is U:
+                        up[i] = idx.name
+                    else:
+                        down[i] = idx.name
             indexed = self.idx(up=up, down=down)
             labels = indexed.labels
             if len(set(labels)) != len(labels):
@@ -884,6 +887,14 @@ class Tensor:
 
 class Metric(Tensor):
     pass
+
+
+class ConnectionTensor(Tensor):
+    def as_signature(self, target_signature, simplify=False):
+        target_signature = _validate_signature(target_signature, self.rank)
+        if target_signature != self.signature:
+            raise ValueError("Conexao nao suporta subir/descer indices.")
+        return self.components
 
 
 class IndexedTensor:

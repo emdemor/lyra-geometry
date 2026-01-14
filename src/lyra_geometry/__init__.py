@@ -3,6 +3,7 @@
 from .core import (
     Connection,
     ConnectionStrategy,
+    ConnectionTensor,
     CurvatureStrategy,
     Down,
     DownIndex,
@@ -31,6 +32,7 @@ from .core import (
 __all__ = [
     "Connection",
     "ConnectionStrategy",
+    "ConnectionTensor",
     "CurvatureStrategy",
     "Down",
     "DownIndex",
