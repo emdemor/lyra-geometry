@@ -40,6 +40,12 @@ class DownIndex:
         return f"_{self.label}"
 
 
+class CoordIndex(Index):
+    def __init__(self, name, coord_pos):
+        super().__init__(name)
+        self.coord_pos = coord_pos
+
+
 class Up:
     def __call__(self, label=NO_LABEL):
         return UpIndex(label)
@@ -224,6 +230,29 @@ class TensorSpace:
         self.einstein = None
         self.scalar_curvature = None
         self.update()
+
+    def _coord_symbol(self, coord):
+        if isinstance(coord, int):
+            return self.coords[coord]
+        if isinstance(coord, sp.Basic):
+            if coord in self.coords:
+                return coord
+            raise ValueError("Coordenada desconhecida.")
+        if isinstance(coord, str):
+            for c in self.coords:
+                if str(c) == coord:
+                    return c
+            raise ValueError("Coordenada desconhecida.")
+        raise TypeError("Coordenada deve ser int, simbolo ou string.")
+
+    def coord_index(self, names):
+        if isinstance(names, str):
+            parts = [p for p in names.replace(",", " ").split() if p]
+        else:
+            parts = list(names)
+        if len(parts) != self.dim:
+            raise ValueError("Numero de indices deve ser igual a dim.")
+        return tuple(CoordIndex(str(p), i) for i, p in enumerate(parts))
 
     def set_metric(self, metric, metric_inv=None):
         self.metric = Metric(sp.Array(metric), self, signature=(D, D), name="g", label="g")
@@ -916,6 +945,45 @@ class Tensor:
     def nabla(self, deriv_position="prepend"):
         return self.space.nabla(self, deriv_position=deriv_position)
 
+    def d(self, coord, deriv_position="append"):
+        if isinstance(coord, UpIndex):
+            raise ValueError("Indice de derivada deve ser covariante.")
+        if isinstance(coord, (Index, DownIndex)):
+            label = coord.name if isinstance(coord, Index) else coord.label
+            if label is None or label is NO_LABEL:
+                raise ValueError("Indice de derivada deve ter rotulo explicito.")
+            coords = self.space.coords
+            shape = self.components.shape
+            dim = self.space.dim
+            if deriv_position == "append":
+                new_shape = shape + (dim,)
+                flat = []
+                for idx in itertools.product(*(range(s) for s in shape)):
+                    for k, sym in enumerate(coords):
+                        flat.append(sp.diff(self.components[idx], sym))
+                new_sig = self.signature + (D,)
+            elif deriv_position == "prepend":
+                new_shape = (dim,) + shape
+                flat = []
+                for k, sym in enumerate(coords):
+                    for idx in itertools.product(*(range(s) for s in shape)):
+                        flat.append(sp.diff(self.components[idx], sym))
+                new_sig = (D,) + self.signature
+            else:
+                raise ValueError("deriv_position deve ser 'append' ou 'prepend'.")
+            target = sp.ImmutableDenseNDimArray(flat, new_shape)
+            out = Tensor(target, self.space, signature=new_sig, name=None, label=self.label)
+            out._labels = list(getattr(self, "_labels", [])) + [label] if deriv_position == "append" else [label] + list(getattr(self, "_labels", []))
+            return out
+
+        sym = self.space._coord_symbol(coord)
+        if isinstance(self.components, (sp.Array, sp.ImmutableDenseNDimArray)):
+            flat = [sp.diff(v, sym) for v in self.components]
+            target = sp.ImmutableDenseNDimArray(flat, self.components.shape)
+        else:
+            target = sp.diff(self.components, sym)
+        return Tensor(target, self.space, signature=self.signature, name=None, label=self.label)
+
     def contract(self, pos1, pos2, use_metric=True):
         if pos1 == pos2:
             raise ValueError("pos1 e pos2 devem ser indices distintos.")
@@ -1010,6 +1078,48 @@ class IndexedTensor:
         if hasattr(self.components, "_repr_latex_"):
             return self.components._repr_latex_()
         return sp.latex(self.components)
+
+    def d(self, coord, deriv_position="append"):
+        labels = list(self.labels)
+        if isinstance(coord, UpIndex):
+            raise ValueError("Indice de derivada deve ser covariante.")
+        if isinstance(coord, (DownIndex, Index)):
+            lab = coord.label if isinstance(coord, DownIndex) else coord.name
+            if lab is None or lab is NO_LABEL:
+                raise ValueError("Indice de derivada deve ter rotulo explicito.")
+            coords = self.tensor.space.coords
+            shape = self.components.shape
+            dim = self.tensor.space.dim
+            if deriv_position == "append":
+                new_shape = shape + (dim,)
+                flat = []
+                for idx in itertools.product(*(range(s) for s in shape)):
+                    for k, sym in enumerate(coords):
+                        flat.append(sp.diff(self.components[idx], sym))
+                new_sig = self.signature + (D,)
+                new_labels = labels + [lab]
+            elif deriv_position == "prepend":
+                new_shape = (dim,) + shape
+                flat = []
+                for k, sym in enumerate(coords):
+                    for idx in itertools.product(*(range(s) for s in shape)):
+                        flat.append(sp.diff(self.components[idx], sym))
+                new_sig = (D,) + self.signature
+                new_labels = [lab] + labels
+            else:
+                raise ValueError("deriv_position deve ser 'append' ou 'prepend'.")
+            target = sp.ImmutableDenseNDimArray(flat, new_shape)
+            tensor = Tensor(target, self.tensor.space, signature=new_sig)
+            return IndexedTensor(tensor, tensor.components, tensor.signature, new_labels)
+
+        sym = self.tensor.space._coord_symbol(coord)
+        if isinstance(self.components, (sp.Array, sp.ImmutableDenseNDimArray)):
+            flat = [sp.diff(v, sym) for v in self.components]
+            target = sp.ImmutableDenseNDimArray(flat, self.components.shape)
+        else:
+            target = sp.diff(self.components, sym)
+        tensor = Tensor(target, self.tensor.space, signature=self.signature)
+        return IndexedTensor(tensor, tensor.components, tensor.signature, labels)
 
     def __repr__(self):
         return repr(self.components)
@@ -1183,14 +1293,23 @@ class IndexedTensor:
             other_sig = other.signature
             other_space = other.tensor.space
             other_components = other.components
+            other_labels = list(other.labels)
         elif isinstance(other, Tensor):
             other_sig = other.signature
             other_space = other.space
             other_components = other.components
+            other_labels = list(getattr(other, "_labels", []))
         else:
             return NotImplemented
         if other_space is not self.tensor.space:
             raise ValueError("Tensores pertencem a TensorSpaces distintos.")
+        labels = list(self.labels)
+        if other_labels:
+            if set(other_labels) != set(labels):
+                raise ValueError("Soma exige os mesmos rotulos.")
+            perm = [other_labels.index(lab) for lab in labels]
+            other_components = sp.permutedims(other_components, perm)
+            other_sig = tuple(other_sig[i] for i in perm)
         if other_sig != self.signature:
             raise ValueError("Assinaturas diferentes; soma exige mesma assinatura.")
         arr = self.components + other_components
@@ -1205,14 +1324,23 @@ class IndexedTensor:
             other_sig = other.signature
             other_space = other.tensor.space
             other_components = other.components
+            other_labels = list(other.labels)
         elif isinstance(other, Tensor):
             other_sig = other.signature
             other_space = other.space
             other_components = other.components
+            other_labels = list(getattr(other, "_labels", []))
         else:
             return NotImplemented
         if other_space is not self.tensor.space:
             raise ValueError("Tensores pertencem a TensorSpaces distintos.")
+        labels = list(self.labels)
+        if other_labels:
+            if set(other_labels) != set(labels):
+                raise ValueError("Subtracao exige os mesmos rotulos.")
+            perm = [other_labels.index(lab) for lab in labels]
+            other_components = sp.permutedims(other_components, perm)
+            other_sig = tuple(other_sig[i] for i in perm)
         if other_sig != self.signature:
             raise ValueError("Assinaturas diferentes; subtracao exige mesma assinatura.")
         arr = self.components - other_components
@@ -1251,6 +1379,9 @@ class TensorFactory:
 
     def __call__(self, tensor, index=None, name=None, label=None):
         return TensorSpace.tensor(self.space, tensor, index=index, name=name, label=label)
+
+    def coord_index(self, names):
+        return self.space.coord_index(names)
 
     def from_function(self, func, signature, name=None, label=None):
         return self.space.from_function(func, signature, name=name, label=label)

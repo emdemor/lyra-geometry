@@ -120,3 +120,22 @@ def test_tensor_factory_call_reorders_axes(space_flat):
     via_factory = space_flat.tensor(expr, index=(+c, -b))
     assert via_factory.components == reordered.components
 
+
+def test_indexed_tensor_addition_aligns_labels(space_flat):
+    """Align labels before adding indexed tensors with permuted axes."""
+    a, b = space_flat.index("a b")
+    t = space_flat.from_array([[1, 2], [3, 4]], signature=(U, D))
+    sum_ab = t[a, b] + t[b, a]
+    expected = t.components + sp.permutedims(t.components, (1, 0))
+    assert sum_ab.components == expected
+
+
+def test_indexed_tensor_partial_derivative_uses_coord_index(space_flat):
+    """Differentiate using coordinate-bound indices."""
+    x, y = space_flat.coords
+    m, n = space_flat.coord_index("m n")
+    a, b = space_flat.index("a b")
+    t = space_flat.generic("T", (U, D))
+    dt = t[a, b].d(-m)
+    assert dt.components[0, 0, 0] == sp.diff(t.components[0, 0], x)
+    assert dt.signature == (U, D, D)
