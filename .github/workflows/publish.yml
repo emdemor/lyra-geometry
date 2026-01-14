@@ -11,6 +11,23 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v4
+      - name: Sync package version from __init__.py
+        run: |
+          python - <<'PY'
+          import re
+          from pathlib import Path
+          import sys
+          sys.path.insert(0, "src")
+          from lyra_geometry import __version__
+
+          path = Path("pyproject.toml")
+          content = path.read_text(encoding="utf-8")
+          updated, count = re.subn(r'(?m)^version\\s*=\\s*".*"$', f'version = "{__version__}"', content)
+          if count != 1:
+              raise SystemExit("Expected a single version field in pyproject.toml")
+          path.write_text(updated, encoding="utf-8")
+          print(f"Synced pyproject.toml version to {__version__}")
+          PY
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
