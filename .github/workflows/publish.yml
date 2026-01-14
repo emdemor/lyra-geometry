@@ -19,7 +19,7 @@ jobs:
 
           init_path = Path("src/lyra_geometry/__init__.py")
           init_text = init_path.read_text(encoding="utf-8")
-          match = re.search(r'__version__\\s*=\\s*"([^"]+)"', init_text)
+          match = re.search(r'__version__\s*=\s*"([^"]+)"', init_text)
           if not match:
               raise SystemExit("Could not find __version__ in __init__.py")
           version = match.group(1)
