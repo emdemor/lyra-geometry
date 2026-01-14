@@ -870,6 +870,11 @@ class Tensor:
     def __truediv__(self, other):
         if self.rank == 0:
             return self._as_scalar() / other
+        if isinstance(other, (numbers.Number, sp.Basic)) and not isinstance(
+            other, (Tensor, IndexedTensor)
+        ):
+            scaled = self.components / sp.sympify(other)
+            return Tensor(scaled, self.space, signature=self.signature)
         return NotImplemented
 
     def __rtruediv__(self, other):
@@ -1351,6 +1356,24 @@ class IndexedTensor:
         if not isinstance(other, IndexedTensor):
             return NotImplemented
         return other.__sub__(self)
+
+    def __truediv__(self, other):
+        if isinstance(other, (numbers.Number, sp.Basic)) and not isinstance(
+            other, (Tensor, IndexedTensor)
+        ):
+            scaled = self.components / sp.sympify(other)
+            tensor = Tensor(scaled, self.tensor.space, signature=self.signature)
+            return IndexedTensor(tensor, tensor.components, tensor.signature, list(self.labels))
+        return NotImplemented
+
+    def __rtruediv__(self, other):
+        if isinstance(other, (numbers.Number, sp.Basic)) and not isinstance(
+            other, (Tensor, IndexedTensor)
+        ):
+            scaled = sp.sympify(other) / self.components
+            tensor = Tensor(scaled, self.tensor.space, signature=self.signature)
+            return IndexedTensor(tensor, tensor.components, tensor.signature, list(self.labels))
+        return NotImplemented
 
 
 class Connection:

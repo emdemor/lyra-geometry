@@ -130,6 +130,15 @@ def test_indexed_tensor_addition_aligns_labels(space_flat):
     assert sum_ab.components == expected
 
 
+def test_indexed_tensor_division_scales_components(space_flat):
+    """Divide an indexed tensor by a scalar expression elementwise."""
+    a, b = space_flat.index("a b")
+    t = space_flat.from_array([[2, 4], [6, 8]], signature=(U, D))
+    expr = sp.Symbol("k")
+    scaled = t[a, b] / expr
+    assert scaled.components[0, 0] == t.components[0, 0] / expr
+
+
 def test_indexed_tensor_partial_derivative_uses_coord_index(space_flat):
     """Differentiate using coordinate-bound indices."""
     x, y = space_flat.coords
