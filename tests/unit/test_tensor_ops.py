@@ -121,13 +121,12 @@ def test_tensor_factory_call_reorders_axes(space_flat):
     assert via_factory.components == reordered.components
 
 
-def test_indexed_tensor_addition_aligns_labels(space_flat):
-    """Align labels before adding indexed tensors with permuted axes."""
+def test_indexed_tensor_addition_rejects_label_variance_mismatch(space_flat):
+    """Reject addition when the same labels carry different variance."""
     a, b = space_flat.index("a b")
     t = space_flat.from_array([[1, 2], [3, 4]], signature=(U, D))
-    sum_ab = t[a, b] + t[b, a]
-    expected = t.components + sp.permutedims(t.components, (1, 0))
-    assert sum_ab.components == expected
+    with pytest.raises(ValueError):
+        _ = t[a, b] + t[b, a]
 
 
 def test_indexed_tensor_division_scales_components(space_flat):
