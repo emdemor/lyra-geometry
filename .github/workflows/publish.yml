@@ -16,17 +16,21 @@ jobs:
           python - <<'PY'
           import re
           from pathlib import Path
-          import sys
-          sys.path.insert(0, "src")
-          from lyra_geometry import __version__
+
+          init_path = Path("src/lyra_geometry/__init__.py")
+          init_text = init_path.read_text(encoding="utf-8")
+          match = re.search(r'__version__\\s*=\\s*"([^"]+)"', init_text)
+          if not match:
+              raise SystemExit("Could not find __version__ in __init__.py")
+          version = match.group(1)
 
           path = Path("pyproject.toml")
           content = path.read_text(encoding="utf-8")
-          updated, count = re.subn(r'(?m)^version\\s*=\\s*".*"$', f'version = "{__version__}"', content)
+          updated, count = re.subn(r'(?m)^version\\s*=\\s*".*"$', f'version = "{version}"', content)
           if count != 1:
               raise SystemExit("Expected a single version field in pyproject.toml")
           path.write_text(updated, encoding="utf-8")
-          print(f"Synced pyproject.toml version to {__version__}")
+          print(f"Synced pyproject.toml version to {version}")
           PY
       - name: Set up Python
         uses: actions/setup-python@v5
