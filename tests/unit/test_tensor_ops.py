@@ -38,3 +38,12 @@ def test_contract_same_variance_without_metric_raises(space_flat):
     t = space_flat.generic("T", (U, U))
     with pytest.raises(ValueError):
         t.contract(0, 1, use_metric=False)
+
+
+def test_subtraction_of_contracted_tensors_returns_tensor(space_flat):
+    """Support subtraction of tensors with matching signature and space."""
+    a, s, l, m, n = space_flat.index("a s l m n")
+    gamma = space_flat.christoffel2
+    expr = gamma[s, a, n] * gamma[l, s, m] - gamma[s, a, m] * gamma[l, s, n]
+    assert isinstance(expr, Tensor)
+    assert expr.rank == 4

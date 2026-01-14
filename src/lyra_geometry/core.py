@@ -663,6 +663,12 @@ class Tensor:
     def __add__(self, other):
         if self.rank == 0:
             return self._as_scalar() + other
+        if isinstance(other, Tensor):
+            if other.space is not self.space:
+                raise ValueError("Tensores pertencem a TensorSpaces distintos.")
+            if other.signature != self.signature:
+                raise ValueError("Assinaturas diferentes; soma exige mesma assinatura.")
+            return Tensor(self.components + other.components, self.space, signature=self.signature)
         return NotImplemented
 
     def __radd__(self, other):
@@ -673,6 +679,12 @@ class Tensor:
     def __sub__(self, other):
         if self.rank == 0:
             return self._as_scalar() - other
+        if isinstance(other, Tensor):
+            if other.space is not self.space:
+                raise ValueError("Tensores pertencem a TensorSpaces distintos.")
+            if other.signature != self.signature:
+                raise ValueError("Assinaturas diferentes; subtracao exige mesma assinatura.")
+            return Tensor(self.components - other.components, self.space, signature=self.signature)
         return NotImplemented
 
     def __rsub__(self, other):
