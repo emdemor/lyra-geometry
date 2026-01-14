@@ -26,7 +26,7 @@ jobs:
 
           path = Path("pyproject.toml")
           content = path.read_text(encoding="utf-8")
-          updated, count = re.subn(r'(?m)^version\\s*=\\s*".*"$', f'version = "{version}"', content)
+          updated, count = re.subn(r'(?m)^version\s*=\s*".*"$', f'version = "{version}"', content)
           if count != 1:
               raise SystemExit("Expected a single version field in pyproject.toml")
           path.write_text(updated, encoding="utf-8")
