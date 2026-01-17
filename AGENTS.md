@@ -1,103 +1,120 @@
 # Repository Guidelines
 
+## How to update versions?
+- Bump the version in `pyproject.toml` and `src/lyra_geometry/__init__.py` to the same value.
+- Update `CHANGELOG.md` by moving `Unreleased` entries into a new `vX.Y.Z` section (and add the test note if run).
+
+## How publish is done?
+- Publish runs via GitHub Actions on tag pushes matching `v*` in `.github/workflows/publish.yml`.
+- The workflow syncs `pyproject.toml` version from `src/lyra_geometry/__init__.py`, builds with `python -m build`, and publishes to PyPI using `PYPI_API_TOKEN`.
+- Create a version tag (`vX.Y.Z`) and push it to the remote to trigger the publish workflow.
+
 ## Project Structure & Module Organization
 - `src/lyra_geometry/core.py`: Core library code (tensor space, connections, curvature, and helpers).
 - `src/lyra_geometry/__init__.py`: Public package exports and version.
 - `examples/example.ipynb`: Usage examples and exploratory calculations.
-- `__pycache__/`: Local Python bytecode cache (ignore for commits).
+- `__pycache__/`: Local Python bytecode cache (ignore in commits).
 - `tests/`: Pytest smoke tests.
 
 ## Build, Test, and Development Commands
-- `python -m pip install -e .[dev]`: Install in editable mode with test deps.
-- `python -c "import lyra_geometry"`: Quick import sanity check for the package.
-- `python -m pytest`: Run tests.
-- `jupyter notebook examples/example.ipynb`: Run the notebook examples (if you use Jupyter).
+- `python -m pip install -e .[dev]`: Install in editable mode with development/test dependencies.
+- `python -c "import lyra_geometry"`: Quick sanity check for package import.
+- `python -m pytest`: Run the test suite.
+- `jupyter notebook examples/example.ipynb`: Run the notebook examples (if using Jupyter).
 
 ## Coding Style & Naming Conventions
 - Use 4-space indentation and follow PEP 8 conventions.
 - Class names use `CamelCase` (e.g., `TensorSpace`); functions and variables use `snake_case` (e.g., `from_function`).
-- Prefer explicit, short names for mathematical symbols (`g`, `Gamma`, `Riem`) but keep public APIs readable.
-- No formatter or linter is configured; format consistently with existing code.
+- Prefer explicit, concise names for mathematical symbols (`g`, `Gamma`, `Riem`) while keeping public APIs readable.
+- No formatter or linter is configured; format code consistently with the existing codebase.
 
 ## Testing Guidelines
-- Keep tests close to the module (e.g., `tests/test_tensor.py`) and make them runnable with `python -m pytest`.
-- Name tests descriptively (e.g., `test_raise_index_roundtrip`).
+- Keep tests close to the corresponding module (e.g., `tests/test_tensor.py`).
+- Tests must be runnable via `python -m pytest`.
+- Use descriptive test names (e.g., `test_raise_index_roundtrip`).
 
 ## Commit & Pull Request Guidelines
-- Commit messages are short and imperative in this repo (e.g., `fix repr html`, `add fmt`, `hotfix: ineverted index at connection`).
-- Keep commits focused; include a brief description and any relevant math/context in the PR body.
+- Commit messages should be short and imperative (e.g., `fix repr html`, `add fmt`, `hotfix: inverted index at connection`).
+- Keep commits focused and minimal.
+- Include a brief description and relevant mathematical/contextual notes in the PR body.
 - If changes affect outputs or formulas, include a notebook snippet or minimal reproduction steps.
 
 ## Configuration & Usage Notes
-- This project relies on `sympy` for symbolic math; ensure it is available in your environment.
-- Avoid committing generated files like `__pycache__` and large notebook outputs unless needed.
+- This project relies on `sympy` for symbolic mathematics; ensure it is installed in your environment.
+- Do not commit generated files such as `__pycache__` or large notebook outputs unless strictly necessary.
 
 ## Documentation & TODO Hygiene
 - Track planned work and known issues in `TODO.md`; keep entries short and actionable.
-- When completing TODO items, mark them done and move user-facing changes into `CHANGELOG.md`.
+- When completing TODO items, mark them as done and move user-facing changes to `CHANGELOG.md`.
 
 ## Release / Publication Steps
 - Update `CHANGELOG.md` with user-facing changes and any math/formula updates.
-- Ensure the package version in `src/lyra_geometry/__init__.py` is bumped.
-- Run `python -m pytest` and add a brief note of the outcome in the release notes.
-- If notebook outputs or formulas change, add a minimal reproduction snippet in the PR/body.
-
-## Estrutura Kanban Integrada para Agentes
-
-Este repositório adota uma **estrutura de Kanban integrada** orientada a **agentes automáticos (LLMs, bots, CI/workflows)**. O objetivo é garantir execução determinística baseada em **contratos explícitos**.
+- Bump the package version in `src/lyra_geometry/__init__.py`.
+- Run `python -m pytest` and include a brief note of the result in the release notes.
+- If notebook outputs or formulas change, add a minimal reproduction snippet in the PR or release notes.
 
 ---
 
-## Estrutura de Pastas
+## Integrated Kanban Structure for Agents
+
+This repository adopts an **integrated Kanban structure** oriented toward **automatic agents (LLMs, bots, CI/workflows)**.  
+The goal is to ensure deterministic execution based on **explicit contracts**.
+
+---
+
+## Folder Structure
 
 ```
+
 .kanban/
 ├── board.yml
 └── cards/
-    ├── 0001.yml
-    ├── 0002.yml
-    └── ...
+├── 0001.yml
+├── 0002.yml
+└── ...
+
 ```
 
-### Regras Gerais
+### General Rules
 
-* Deve existir uma pasta **`.kanban`** na raiz do projeto.
-* Todos os **metadados de tarefas** vivem dentro de `.kanban`.
-* Cada card Kanban é representado por **um arquivo YAML** dentro de `.kanban/cards`.
-* Quando uma task atingir o status **`Done`**, ela **DEVE sair do board** (`board.yml`).
+- A **`.kanban`** directory must exist at the project root.
+- All **task metadata** must live inside `.kanban`.
+- Each Kanban card is represented by **a single YAML file** inside `.kanban/cards`.
+- When a task reaches **`Done`** status, it **MUST be removed from the board** (`board.yml`).
 
 ---
 
 ## Board
 
-Arquivo: **`.kanban/board.yml`**
+File: **`.kanban/board.yml`**
 
-* Simula **apenas** as raias:
+- Simulates **only** the following swimlanes:
+  - `Ready`
+  - `Doing`
+  - `Review`
+- Cards in `Done` **do not appear** on the board.
+- Cards must be listed using the template: `- id - [Type] - Title`. Example:
+```
 
-  * `Ready`
-  * `Doing`
-  * `Review`
-* Cards em `Done` **não aparecem** no board.
-* Os cards no board deve ser listados seguindo o template: `- id - [Type] - Title`. Por exemplo:
-```
-- 0001 - [Bug] Adicionar erros explicitos para ranks incompativeis
-- 0002 - [Research] Mapear gargalos de desempenho com expressoes SymPy grandes
-- 0003 - [TechDebt] Adicionar type hints nas APIs publicas principais
-```
+* 0001 - [Bug] Add explicit errors for incompatible ranks
+* 0002 - [Research] Map performance bottlenecks with large SymPy expressions
+* 0003 - [TechDebt] Add type hints to main public APIs
+
+````
 
 ---
 
 # Kanban Card Contract for Agents
 
-Este documento define o **contrato mínimo de informação** que **todo card Kanban DEVE conter** para que **agentes automáticos** consigam operar corretamente.
+This document defines the **minimum information contract** that **every Kanban card MUST contain** so that **automatic agents** can operate correctly.
 
 ---
 
-## 1. Estrutura Obrigatória do Card
+## 1. Mandatory Card Structure
 
-Todo card **DEVE** conter os campos abaixo.
+Every card **MUST** contain the following fields.
 
-### 1.1 Identificação
+### 1.1 Identification
 
 ```yaml
 id: int
@@ -107,107 +124,107 @@ priority: P1 | P2 | P3
 service_class: Standard | Expedite | FixedDate | Intangible
 status: Backlog | Ready | Doing | Review | Done
 owner: string
-```
+````
 
-#### Regras
+#### Rules
 
-* `id` deve ser **autoincrementável**
-* `title` deve ser **acionável** (verbo no infinitivo é recomendado)
-* `owner` deve ser **exatamente um** (humano ou agente)
-* Cards sem `owner` são **inválidos**
+* `id` must be **auto-incrementing**
+* `title` must be **actionable** (verb in infinitive form is recommended)
+* `owner` must be **exactly one** (human or agent)
+* Cards without an `owner` are **invalid**
 
 ---
 
-## 2. Contexto (Obrigatório)
+## 2. Context (Mandatory)
 
 ```yaml
 context: |
-  Explicação clara do problema ou objetivo.
-  Deve permitir entendimento completo do card de forma isolada.
+  Clear explanation of the problem or objective.
+  Must allow full understanding of the card in isolation.
 ```
 
-### Regra Fundamental
+### Fundamental Rule
 
-> Se um agente não consegue explicar o card em **um único parágrafo**,
-> o contexto é considerado **insuficiente**.
+> If an agent cannot explain the card in **a single paragraph**,
+> the context is considered **insufficient**.
 
 ---
 
-## 3. Critérios de Aceitação (Obrigatório)
+## 3. Acceptance Criteria (Mandatory)
 
 ```yaml
 acceptance_criteria:
-  - condição objetiva e verificável
-  - condição testável (sim / não)
+  - objective and verifiable condition
+  - testable condition (yes / no)
 ```
 
-### Regras
+### Rules
 
-* Devem permitir **decisão binária**
-* Nunca usar termos vagos como:
+* Must allow **binary decisions**
+* Never use vague terms such as:
 
-  * “melhorar”
-  * “otimizar”
-  * “ajustar”
-  * “avaliar”
+  * “improve”
+  * “optimize”
+  * “adjust”
+  * “evaluate”
 
-**Exemplo ruim**:
-
-```
-- Melhorar performance
-```
-
-**Exemplo correto**:
+**Bad example**:
 
 ```
-- Latência média < 200ms
+- Improve performance
+```
+
+**Correct example**:
+
+```
+- Average latency < 200ms
 ```
 
 ---
 
-## 4. Dependências e Bloqueios
+## 4. Dependencies and Blockers
 
-### 4.1 Dependências
+### 4.1 Dependencies
 
 ```yaml
 dependencies:
   - card_id
-  - sistema_externo
+  - external_system
 ```
 
-### 4.2 Bloqueios
+### 4.2 Blockers
 
 ```yaml
 blockers:
-  - descrição clara do impedimento atual
+  - clear description of the current impediment
 ```
 
-### Regra de Execução
+### Execution Rule
 
-> Se `blockers` **não estiver vazio**,
-> o agente **DEVE ABORTAR** a execução.
+> If `blockers` is **not empty**,
+> the agent **MUST ABORT** execution.
 
 ---
 
-## 5. Artefatos (Recomendado)
+## 5. Artifacts (Recommended)
 
 ```yaml
 artifacts:
-  - link_para_PR
-  - documentação
+  - link_to_PR
+  - documentation
   - dataset
   - notebook
 ```
 
-Artefatos servem como:
+Artifacts serve as:
 
-* contexto técnico
-* entrada de dados
-* evidência de saída
+* technical context
+* input data
+* output evidence
 
 ---
 
-## 6. Metadados Técnicos (Recomendado)
+## 6. Technical Metadata (Recommended)
 
 ```yaml
 technical:
@@ -219,11 +236,11 @@ technical:
     - Data
 ```
 
-Esses campos **não bloqueiam execução**, mas ajudam planejamento e análise.
+These fields **do not block execution**, but help planning and analysis.
 
 ---
 
-## 7. Campos Inferíveis (Não Obrigatórios)
+## 7. Inferable Fields (Optional)
 
 ```yaml
 created_at: datetime
@@ -231,60 +248,60 @@ started_at: datetime
 done_at: datetime
 ```
 
-### Regra
+### Rule
 
-Agentes **PODEM usar**, mas **NÃO DEVEM assumir** esses campos.
+Agents **MAY use** but **MUST NOT assume** these fields.
 
-Eles são destinados a **métricas**, não à execução.
-
----
-
-## 8. Checklist de Validação do Agente
-
-Antes de executar qualquer ação, o agente **DEVE validar**:
-
-* [ ] `title` existe e é acionável
-* [ ] `type` é conhecido
-* [ ] `owner` existe e é único
-* [ ] `context` é compreensível isoladamente
-* [ ] `acceptance_criteria` existe e é verificável
-* [ ] `blockers` está vazio
-
-### Regra
-
-> Se qualquer item falhar → **ABORTAR EXECUÇÃO**
+They are intended for **metrics**, not execution.
 
 ---
 
-## 9. Comportamento Esperado do Agente
+## 8. Agent Validation Checklist
 
-### 9.1 Card Válido
+Before executing any action, the agent **MUST validate**:
 
-O agente **DEVE**:
+* [ ] `title` exists and is actionable
+* [ ] `type` is known
+* [ ] `owner` exists and is unique
+* [ ] `context` is understandable in isolation
+* [ ] `acceptance_criteria` exists and is verifiable
+* [ ] `blockers` is empty
 
-1. Resumir o objetivo em **1 frase**
-2. Identificar ações necessárias
-3. Executar apenas o escopo definido
-4. Produzir saídas alinhadas aos critérios de aceitação
-5. Referenciar artefatos gerados
+### Rule
 
----
-
-### 9.2 Card Inválido
-
-O agente **DEVE**:
-
-* Informar **qual campo está faltando**
-* Sugerir **exatamente o conteúdo necessário**
-* **Não executar nenhuma ação**
+> If any item fails → **ABORT EXECUTION**
 
 ---
 
-## 10. Exemplo de Card Válido
+## 9. Expected Agent Behavior
+
+### 9.1 Valid Card
+
+The agent **MUST**:
+
+1. Summarize the objective in **1 sentence**
+2. Identify required actions
+3. Execute **only** the defined scope
+4. Produce outputs aligned with the acceptance criteria
+5. Reference generated artifacts
+
+---
+
+### 9.2 Invalid Card
+
+The agent **MUST**:
+
+* Inform **which field is missing**
+* Suggest **exactly what content is required**
+* **Not execute any action**
+
+---
+
+## 10. Example of a Valid Card
 
 ```yaml
 id: 45
-title: Ajustar chunking para RAG jurídico
+title: Adjust chunking for legal RAG
 type: TechDebt
 priority: P2
 service_class: Standard
@@ -292,15 +309,15 @@ status: Ready
 owner: agent-rag-optimizer
 
 context: |
-  O chunking atual está reduzindo recall em perguntas longas
-  em documentos jurídicos com mais de 20 páginas.
+  The current chunking strategy is reducing recall for long questions
+  in legal documents with more than 20 pages.
 
 acceptance_criteria:
   - Recall@5 >= 0.75
-  - Latência média <= 200ms
+  - Average latency <= 200ms
 
 dependencies:
-  - dataset_juridico_v2
+  - legal_dataset_v2
 
 blockers: []
 
@@ -316,23 +333,30 @@ technical:
 
 ---
 
-## 11. Princípio Fundamental
+## 11. Fundamental Principle
 
-> **Cards são contratos.**
-> **Agentes não interpretam intenções — apenas contratos explícitos.**
+> **Cards are contracts.**
+> **Agents do not interpret intentions — only explicit contracts.**
 
-## 12. Cards Executions
+---
 
-* Quando for executar um card:
-  - leia o contexto no seu arquivo .yml
-  - atualize o status no card para Doing
-  - atualize o board
-  - faça as alterações
-  - quando fizer sentido, adicione testes unitários relavantes
-  - rode a pipeline de testes para garantir que está tudo funcionando
+## 12. Card Execution Flow
 
-* Quando finalizar um card
-  - atualize o status no card para Doing
-  - atualize o board
-  - atualize o changelogs
-  - comite as alterações. O template para a mensagem de commit é "{{card-id}}-{{type-with-no-spaces}}-{{title-with-no-spaces}}"
+### When executing a card:
+
+* Read the context from its `.yml` file
+* Update the card status to `Doing`
+* Update the board
+* Apply the required changes
+* When appropriate, add relevant unit tests
+* Run the test pipeline to ensure everything works
+
+### When finishing a card:
+
+* Update the card status to `Done`
+* Update the board
+* Update the changelogs
+* Commit the changes using the template:
+  `{{card-id}}-{{type-with-no-spaces}}-{{title-with-no-spaces}}`
+
+```
