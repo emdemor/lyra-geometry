@@ -1,4 +1,5 @@
 import itertools
+import numbers
 import sympy as sp
 
 from .tensors import (
@@ -742,6 +743,24 @@ class Connection:
         if self.components is None:
             raise ValueError("Conexao nao definida.")
         return self.components[idx]
+
+    def __mul__(self, other):
+        if isinstance(other, Tensor):
+            if other.rank != 0:
+                return NotImplemented
+            scalar = other._as_scalar()
+        elif isinstance(other, IndexedTensor):
+            return NotImplemented
+        elif isinstance(other, (numbers.Number, sp.Basic)):
+            scalar = sp.sympify(other)
+        else:
+            return NotImplemented
+        if self.components is None:
+            return Connection(None)
+        return Connection(scalar * self.components)
+
+    def __rmul__(self, other):
+        return self.__mul__(other)
 
 
 class SpaceTime(TensorSpace):

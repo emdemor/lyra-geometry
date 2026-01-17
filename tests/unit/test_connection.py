@@ -1,3 +1,4 @@
+import sympy as sp
 import pytest
 
 from lyra_geometry import ConnectionTensor, Tensor, U, D
@@ -18,3 +19,14 @@ def test_connection_tensor_supports_einstein_contraction(space_flat):
     contracted = gamma[+b, -a, -n] * gamma[+l, -b, -m]
     assert isinstance(contracted, Tensor)
     assert contracted.rank == 4
+
+
+def test_connection_scalar_multiplication(space_flat):
+    phi = sp.symbols("phi")
+    gamma = space_flat.gamma
+    scaled_left = phi * gamma
+    scaled_right = gamma * phi
+    assert scaled_left.components == sp.Array(gamma.components) * phi
+    assert scaled_right.components == scaled_left.components
+    tensor_scaled = space_flat.phi * gamma
+    assert tensor_scaled.components == sp.Array(gamma.components) * space_flat.phi.expr
