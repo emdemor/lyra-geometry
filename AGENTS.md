@@ -87,7 +87,7 @@ Arquivo: **`.kanban/board.yml`**
 
 ---
 
-## Kanban Card Contract for Agents
+# Kanban Card Contract for Agents
 
 Este documento define o **contrato mínimo de informação** que **todo card Kanban DEVE conter** para que **agentes automáticos** consigam operar corretamente.
 
@@ -320,3 +320,17 @@ technical:
 
 > **Cards são contratos.**
 > **Agentes não interpretam intenções — apenas contratos explícitos.**
+
+## 12. Cards Executions
+
+* Quando for executar um card:
+  - leia o contexto no seu arquivo .yml
+  - atualize o status no card para Doing
+  - atualize o board
+  - faça as alterações
+
+* Quando finalizar um card
+  - atualize o status no card para Doing
+  - atualize o board
+  - atualize o changelogs
+  - comite as alterações
