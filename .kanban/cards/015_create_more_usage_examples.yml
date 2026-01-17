@@ -1,0 +1,25 @@
+id: 15
+title: Create more usage examples
+type: Feature
+priority: P2
+service_class: Standard
+status: Ready
+owner: agent-codex
+
+context: |
+  Expand the project's usage examples so new users can quickly understand how to build
+  tensor spaces, define metrics, and compute connections/curvature with the current API.
+
+acceptance_criteria:
+  - At least two new usage examples are added under examples/ or README.md
+  - Each example includes minimal code plus a short explanation of the expected output
+  - Examples run with current public APIs without requiring new dependencies
+
+dependencies: []
+blockers: []
+artifacts: []
+
+technical:
+  estimate: S
+  risk: Low
+  tags: [Docs, Examples]
