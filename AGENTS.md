@@ -31,3 +31,13 @@
 ## Configuration & Usage Notes
 - This project relies on `sympy` for symbolic math; ensure it is available in your environment.
 - Avoid committing generated files like `__pycache__` and large notebook outputs unless needed.
+
+## Documentation & TODO Hygiene
+- Track planned work and known issues in `TODO.md`; keep entries short and actionable.
+- When completing TODO items, mark them done and move user-facing changes into `CHANGELOG.md`.
+
+## Release / Publication Steps
+- Update `CHANGELOG.md` with user-facing changes and any math/formula updates.
+- Ensure the package version in `src/lyra_geometry/__init__.py` is bumped.
+- Run `python -m pytest` and add a brief note of the outcome in the release notes.
+- If notebook outputs or formulas change, add a minimal reproduction snippet in the PR/body.
