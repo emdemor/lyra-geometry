@@ -8,10 +8,13 @@
 - If notebooks or formulas changed, add a minimal reproduction snippet.
 
 ## Unreleased
+
+## v0.1.16
 - add Lyra autoparallel equations helper for 4D metrics with tau/lambda parameter choice
 - fix: allow scalar multiplication of Connection objects (sympy scalars and scalar tensors)
 - fix: support explicit index variance when indexing Connection (gamma)
 - add shortcuts for covariant derivatives of phi via st.nabla_phi and st.nabla_nabla_phi
+- tests: `python -m pytest` (44 passed in 18.66s)
 
 ## v0.1.15
 - refactor module layout into core/tensors/diff_ops/invariants/utils with compatibility re-exports
