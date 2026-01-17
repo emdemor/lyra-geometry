@@ -615,24 +615,29 @@ class TensorSpace:
         param = _resolve_autoparallel_parameter(parameter)
         coord_funcs = [sp.Function(str(c))(param) for c in self.coords]
         subs_map = {self.coords[i]: coord_funcs[i] for i in range(self.dim)}
-        velocities = [sp.diff(f, param) for f in coord_funcs]
-        phi = self.phi.expr if isinstance(self.phi, Tensor) else self.phi
-        phi_sub = phi.subs(subs_map)
-        nabla_phi = [
-            (sp.diff(phi, coord) / phi).subs(subs_map) for coord in self.coords
-        ]
-        Gamma = self.christoffel2
-        equations = []
-        for alpha in range(self.dim):
-            acc = sp.diff(coord_funcs[alpha], param, 2)
-            conn_term = 0
-            for mu in range(self.dim):
-                for nu in range(self.dim):
-                    gamma_val = phi_sub * Gamma[alpha, mu, nu].subs(subs_map)
-                    conn_term += gamma_val * velocities[mu] * velocities[nu]
-            phi_term = sum(nabla_phi[nu] * velocities[alpha] * velocities[nu] for nu in range(self.dim))
-            equations.append(sp.Eq(sp.simplify(acc + conn_term + phi_term), 0))
-        return equations
+        del_x = self.tensor.from_array([sp.diff(f, param) for f in coord_funcs], signature=(U,))
+        del_2_x = self.tensor.from_array([sp.diff(f, param, 2) for f in coord_funcs], signature=(U,))
+
+
+        m, al, b = self.index("mu alpha beta")
+
+
+        autoparallel_lhs = self.tensor(
+            (
+                (
+                    del_2_x[+m]
+                    + (
+                        self.phi * self.gamma[+m,-al,-b]
+                        + self.nabla_phi[-b] * self.delta[+m,-al]
+                    )
+                    *del_x[+al]*del_x[+b]
+                )
+            ).fmt(),
+            index=(+m,),
+        )
+        autoparallel_equations = [sp.Eq(x.subs(subs_map).doit(), 0) for x in autoparallel_lhs.components]
+
+        return autoparallel_equations
 
     def ricci_scalar(self):
         if self.ricci is None or self.metric_inv is None or self.scalar_curvature is None:
