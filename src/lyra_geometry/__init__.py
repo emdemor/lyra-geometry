@@ -7,6 +7,7 @@ from .core import (
     CurvatureStrategy,
     FixedConnectionStrategy,
     autoparallel_equations,
+    geodesic_equations,
     LyraConnectionStrategy,
     LyraCurvatureStrategy,
     Manifold,
@@ -44,6 +45,7 @@ __all__ = [
     "DownIndex",
     "FixedConnectionStrategy",
     "autoparallel_equations",
+    "geodesic_equations",
     "Index",
     "IndexedTensor",
     "IndexedArray",
@@ -71,4 +73,4 @@ __all__ = [
     "u",
 ]
 
-__version__ = "0.1.16"
+__version__ = "0.1.17"

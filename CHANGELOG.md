@@ -8,9 +8,12 @@
 - If notebooks or formulas changed, add a minimal reproduction snippet.
 
 ## Unreleased
+
+## v0.1.17
 - add IndexedArray for non-tensor indexed objects, with variance-only indexing and Einstein contraction rules
 - change Christoffel symbols to IndexedArray and add Kronecker delta + Levi-Civita symbol to TensorSpace
-- tests: `python -m pytest` (51 passed in 19.56s)
+- add geodesic equations helper using christoffel2 and nabla_phi terms
+- tests: `python -m pytest` (53 passed in 26.31s)
 
 ## v0.1.16
 - add Lyra autoparallel equations helper for 4D metrics with tau/lambda parameter choice

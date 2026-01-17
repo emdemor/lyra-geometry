@@ -597,6 +597,49 @@ class TensorSpace:
             return nabla2.contract(nabla2.rank - 2, nabla2.rank - 1)
         raise ValueError("deriv_position deve ser 'append' ou 'prepend'.")
 
+    def geodesic_equations(self, parameter="tau"):
+        """
+        Calcula as equacoes geodesicas 4D para x^mu(s).
+
+        parameter aceita "timelike"/"tau" ou "null"/"lambda" (ou um Symbol).
+        Retorna uma lista com 4 equacoes sympy.Eq para x^0..x^3.
+        """
+        if self.dim != 4:
+            raise ValueError("Geodesicas exigem dim=4.")
+        if self.metric is None:
+            raise ValueError("Defina a metrica para calcular Christoffel.")
+        if self.christoffel2 is None:
+            self.update(include=("metric", "christoffel"))
+
+        param = _resolve_autoparallel_parameter(parameter)
+        coord_funcs = [sp.Function(str(c))(param) for c in self.coords]
+        subs_map = {self.coords[i]: coord_funcs[i] for i in range(self.dim)}
+        del_x = self.tensor.from_array([sp.diff(f, param) for f in coord_funcs], signature=(U,))
+        del_2_x = self.tensor.from_array([sp.diff(f, param, 2) for f in coord_funcs], signature=(U,))
+
+        m, al, b = self.index("mu alpha beta")
+
+        geodesic_lhs = self.tensor(
+            (
+                (
+                    del_2_x[+m]
+                    + (
+                        self.christoffel2[+m,-al,-b]
+                        + (
+                            self.nabla_phi[-al] * self.delta[+m,-b]
+                            + self.nabla_phi[-b] * self.delta[+m,-al]
+                            - self.nabla_phi[+m] * self.g[-al,-b]
+                        )
+                    )
+                    *del_x[+al]*del_x[+b]
+                )
+            ).fmt(),
+            index=(+m,),
+        )
+        geodesic_equations = [sp.Eq(x.subs(subs_map).doit(), 0) for x in geodesic_lhs.components]
+
+        return geodesic_equations
+
     def autoparallel_equations(self, parameter="tau"):
         """
         Calcula as equacoes de curvas autoparalelas 4D para x^mu(s).
@@ -835,6 +878,14 @@ def autoparallel_equations(metric, coords, parameter="tau", connection_strategy=
     return space.autoparallel_equations(parameter=parameter)
 
 
+def geodesic_equations(metric, coords, parameter="tau", connection_strategy=None):
+    """
+    Construtor rapido para equacoes geodesicas a partir de metrica e coordenadas.
+    """
+    space = TensorSpace(coords=coords, metric=metric, connection_strategy=connection_strategy)
+    return space.geodesic_equations(parameter=parameter)
+
+
 def gradient(tensor, space=None, deriv_position="prepend"):
     from .diff_ops import gradient as _gradient
 
@@ -881,6 +932,7 @@ __all__ = [
     "DownIndex",
     "FixedConnectionStrategy",
     "autoparallel_equations",
+    "geodesic_equations",
     "Index",
     "IndexedTensor",
     "LyraConnectionStrategy",

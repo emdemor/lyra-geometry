@@ -1,0 +1,28 @@
+id: 21
+title: Construir equacoes geodesicas via christoffel2 e nabla_phi
+type: Feature
+priority: P2
+service_class: Standard
+status: Done
+owner: agent-codex
+
+context: |
+  Implementar um helper para equacoes geodesicas 4D usando christoffel2 e os
+  termos com nabla_phi/delta/g conforme o trecho fornecido, mantendo a API de
+  autoparalelas intacta e oferecendo funcao publica equivalente.
+
+acceptance_criteria:
+  - TensorSpace.geodesic_equations retorna 4 equacoes sympy.Eq para dim=4
+  - geodesic_equations(metric, coords, parameter) delega ao TensorSpace
+  - A expressao usa christoffel2 + termos com nabla_phi/delta/g como no trecho fornecido
+  - Testes com metrica de Minkowski retornam d2x/ds2 = 0 para as 4 coordenadas
+  - Docstring descreve entradas, saida e parametro
+
+dependencies: []
+blockers: []
+artifacts: []
+
+technical:
+  estimate: M
+  risk: Medium
+  tags: [Geometry, Geodesics]
