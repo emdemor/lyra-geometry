@@ -71,6 +71,16 @@ def test_subtraction_aligns_labels_before_combining(space_flat):
     assert diff.components == expected
 
 
+def test_addition_rejects_incompatible_ranks(space_flat):
+    """Reject sum when ranks differ between tensors."""
+    s = space_flat.scalar(sp.symbols("s"))
+    v = space_flat.generic("V", (U,))
+    with pytest.raises(ValueError, match="rank"):
+        _ = v + s
+    with pytest.raises(ValueError, match="rank"):
+        _ = s + v
+
+
 def test_contracted_connection_terms_follow_label_order(space_flat):
     """Compare contracted terms after aligning axes explicitly."""
     t, x, y, z = sp.symbols("t x y z", real=True)

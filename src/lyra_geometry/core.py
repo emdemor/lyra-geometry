@@ -766,7 +766,17 @@ class Tensor:
         return self.components[indices]
 
     def __add__(self, other):
+        if isinstance(other, Tensor) and other.rank != self.rank:
+            raise ValueError(
+                f"Soma exige tensores com o mesmo rank ({self.rank} vs {other.rank})."
+            )
         if self.rank == 0:
+            if isinstance(other, IndexedTensor) and other.tensor.rank != 0:
+                raise ValueError(
+                    f"Soma exige tensores com o mesmo rank ({self.rank} vs {other.tensor.rank})."
+                )
+            if isinstance(other, Tensor):
+                return self._as_scalar() + other._as_scalar()
             return self._as_scalar() + other
         if isinstance(other, Tensor):
             if other.space is not self.space:
@@ -797,7 +807,17 @@ class Tensor:
         return NotImplemented
 
     def __sub__(self, other):
+        if isinstance(other, Tensor) and other.rank != self.rank:
+            raise ValueError(
+                f"Subtracao exige tensores com o mesmo rank ({self.rank} vs {other.rank})."
+            )
         if self.rank == 0:
+            if isinstance(other, IndexedTensor) and other.tensor.rank != 0:
+                raise ValueError(
+                    f"Subtracao exige tensores com o mesmo rank ({self.rank} vs {other.tensor.rank})."
+                )
+            if isinstance(other, Tensor):
+                return self._as_scalar() - other._as_scalar()
             return self._as_scalar() - other
         if isinstance(other, Tensor):
             if other.space is not self.space:
@@ -1359,6 +1379,10 @@ class IndexedTensor:
             other_labels = list(getattr(other, "_labels", []))
         else:
             return NotImplemented
+        if len(other_sig) != len(self.signature):
+            raise ValueError(
+                f"Soma exige tensores com o mesmo rank ({len(self.signature)} vs {len(other_sig)})."
+            )
         if other_space is not self.tensor.space:
             raise ValueError("Tensores pertencem a TensorSpaces distintos.")
         labels = list(self.labels)
@@ -1390,6 +1414,10 @@ class IndexedTensor:
             other_labels = list(getattr(other, "_labels", []))
         else:
             return NotImplemented
+        if len(other_sig) != len(self.signature):
+            raise ValueError(
+                f"Subtracao exige tensores com o mesmo rank ({len(self.signature)} vs {len(other_sig)})."
+            )
         if other_space is not self.tensor.space:
             raise ValueError("Tensores pertencem a TensorSpaces distintos.")
         labels = list(self.labels)

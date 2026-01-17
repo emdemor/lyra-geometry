@@ -10,6 +10,7 @@
 ## Unreleased
 - expand README with project scope and comparisons
 - add .kanban card metadata scaffolding
+- raise explicit errors on tensor add/sub rank mismatches
 
 ## v0.1.11
 - require explicit index variance (+/-) in tensor indexing

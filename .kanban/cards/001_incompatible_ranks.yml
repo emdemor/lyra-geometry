@@ -3,7 +3,7 @@ title: Adicionar erros explicitos para ranks incompativeis
 type: Bug
 priority: P2
 service_class: Standard
-status: Ready
+status: Done
 owner: agent-codex
 
 context: |
