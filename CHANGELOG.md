@@ -1,6 +1,12 @@
 # Changelog
 
 ## Unreleased
+
+## v0.1.10
+- aceaf76 bump version to 0.1.10
+- b9adcc9 add tag trigger on cicd
+- 56dd992 disable publish tag trigger
+- 07ac582 update changelog
 - fc1f4b9 add readme.md
 - 96c692a add changelog
 - 395345c add nabla order recursion
