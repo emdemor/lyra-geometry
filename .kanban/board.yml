@@ -1,5 +1,6 @@
 lanes:
   Ready:
+    - 0014 - [Feature] Add geodesic equation calculation
     - 0011 - [Feature] Integrar com sympy.diffgeom e sympy.tensor
   Doing: []
   Review: []

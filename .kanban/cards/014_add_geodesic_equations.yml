@@ -1,0 +1,29 @@
+id: 14
+title: Add geodesic equation calculation
+type: Feature
+priority: P2
+service_class: Standard
+status: Ready
+owner: agent-codex
+
+context: |
+  Add a public API to compute 4D geodesic equations from a given metric so users can obtain the four second-order ODEs for x^mu(s) with proper time (tau) for timelike particle geodesics and an affine parameter (lambda) for null geodesics, leveraging existing Christoffel symbol utilities and keeping the API consistent with current tensor/metric conventions.
+  - In Lyra spacetime, geodesics are: $\frac{d^{2}x^{\mu}}{d\tau^{2}}+\left[\left\{ \begin{array}{c}\mu\\\alpha\beta\end{array}\right\} +\phi^{-1}\left(\partial_{\alpha}\phi\delta_{\beta}^{\mu}+\partial_{\beta}\phi\delta_{\alpha}^{\mu}-\partial_{\nu}\phi g^{\mu\nu}g_{\alpha\beta}\right)\right]+\frac{dx^{\alpha}}{d\tau}\frac{dx^{\beta}}{d\tau}=0$
+
+
+acceptance_criteria:
+  - A new public function exists to compute geodesic equations for a 4D metric and coordinate symbols
+  - The function returns an array-like object of length 4 with equations for x^0, x^1, x^2, x^3
+  - For timelike geodesics, the equations use tau as the parameter; for null geodesics, they use lambda
+  - The implementation uses existing connection/Christoffel helpers and does not duplicate logic
+  - Unit tests cover Minkowski metric and verify all four equations reduce to zero acceleration
+  - Documentation or docstring explains inputs, outputs, and the parameterization choice
+
+dependencies: []
+blockers: []
+artifacts: []
+
+technical:
+  estimate: M
+  risk: Medium
+  tags: [Geometry, Geodesics, API]
