@@ -1,3 +1,4 @@
+import pytest
 import sympy as sp
 
 import lyra_geometry as pl
@@ -88,6 +89,25 @@ def test_sympy_tensor_connection_chain_contracts_multiple_labels(space_flat, coo
     mixed = expr * t[a, b] * s[c, a] * gamma[d, c, e]
     assert isinstance(mixed, Tensor)
     assert mixed.rank == 3
+
+
+def test_contract_raises_on_triplicate_label(space_flat):
+    """Reject contractions when a label appears more than twice."""
+    a, b, c, d = space_flat.index("a b c d")
+    t = space_flat.generic("T", (U, D))
+    s = space_flat.generic("S", (U, D))
+    u = space_flat.generic("U", (U, D))
+    with pytest.raises(ValueError):
+        _ = space_flat.contract(t[a, b], s[c, a], u[d, a])
+
+
+def test_contract_raises_on_same_variance_labels(space_flat):
+    """Reject contractions with the same variance across tensors."""
+    a, b, c = space_flat.index("a b c")
+    t = space_flat.generic("T", (U, U))
+    s = space_flat.generic("S", (U, U))
+    with pytest.raises(ValueError):
+        _ = t[a, b] * s[c, a]
 
 def test_index_order():
     """Compare terms using a matching component index order."""

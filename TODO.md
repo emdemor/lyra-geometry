@@ -11,7 +11,7 @@ actionable, and dated when added.
 ## Roadmap
 - [x] Publish minimal API reference in README.
 - [x] Add examples for curvature and connection workflows.
-- [ ] Expand smoke tests for tensor contraction edge cases.
+- [x] Expand smoke tests for tensor contraction edge cases.
 
 ## Known issues
 - [ ] Missing explicit error messages for incompatible tensor ranks.

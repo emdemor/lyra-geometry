@@ -439,12 +439,16 @@ class TensorSpace:
         if isinstance(tensor, IndexedTensor):
             base = Tensor(tensor.components, self, signature=tensor.signature, name=name, label=label)
             base._labels = list(tensor.labels)
+            if hasattr(tensor, "_label_history"):
+                base._label_history = set(tensor._label_history)
         elif isinstance(tensor, Tensor):
             if tensor.space is not self:
                 raise ValueError("Tensor pertence a outro TensorSpace.")
             base = Tensor(tensor.components, self, signature=tensor.signature, name=name or tensor.name, label=label)
             if hasattr(tensor, "_labels"):
                 base._labels = list(tensor._labels)
+            if hasattr(tensor, "_label_history"):
+                base._label_history = set(tensor._label_history)
         else:
             raise TypeError("tensor deve ser Tensor ou IndexedTensor.")
 
@@ -600,6 +604,10 @@ class TensorSpace:
         A = tensors[0].components
         sig = list(tensors[0].signature)
         labels = list(tensors[0].labels)
+        history = set()
+        for t in tensors:
+            history.update(getattr(t, "_label_history", set()))
+            history.update(getattr(t.tensor, "_label_history", set()))
 
         for t in tensors[1:]:
             A = sp.tensorproduct(A, t.components)
@@ -614,6 +622,7 @@ class TensorSpace:
 
         pairs = []
         to_remove = set()
+        contracted_labels = set()
         for lab, occ in label_map.items():
             if len(occ) == 1:
                 continue
@@ -624,6 +633,11 @@ class TensorSpace:
                 raise ValueError(f"Indice {lab} aparece com mesma variancia.")
             pairs.append((p1, p2))
             to_remove.update([p1, p2])
+            contracted_labels.add(lab)
+
+        for lab in labels:
+            if lab is not None and lab in history:
+                raise ValueError(f"Indice {lab} reutilizado apos contracao.")
 
         if pairs:
             A = sp.tensorcontraction(A, *pairs)
@@ -632,6 +646,7 @@ class TensorSpace:
         new_labels = [lab for i, lab in enumerate(labels) if i not in to_remove]
         result = Tensor(A, self, signature=new_sig, name=None, label=None)
         result._labels = new_labels
+        result._label_history = history | contracted_labels
         return result
 
     def eval_contract(self, expr):
@@ -829,7 +844,9 @@ class Tensor:
                     raise ValueError("Tensores pertencem a TensorSpaces distintos.")
                 scaled = scalar * other.components
                 tensor = Tensor(scaled, other.tensor.space, signature=other.signature)
-                return IndexedTensor(tensor, tensor.components, tensor.signature, list(other.labels))
+                indexed = IndexedTensor(tensor, tensor.components, tensor.signature, list(other.labels))
+                indexed._label_history = set(getattr(other, "_label_history", set()))
+                return indexed
             return scalar * other
         if isinstance(other, (numbers.Number, sp.Basic)) and not isinstance(
             other, (Tensor, IndexedTensor)
@@ -847,6 +864,7 @@ class Tensor:
             return Tensor(TP, self.space, signature=new_sig)
         if isinstance(other, IndexedTensor) and hasattr(self, "_labels"):
             indexed = IndexedTensor(self, self.components, self.signature, list(self._labels))
+            indexed._label_history = set(getattr(self, "_label_history", set()))
             return self.space.contract(indexed, other)
         return NotImplemented
 
@@ -869,6 +887,7 @@ class Tensor:
             return Tensor(TP, self.space, signature=new_sig)
         if isinstance(other, IndexedTensor) and hasattr(self, "_labels"):
             indexed = IndexedTensor(self, self.components, self.signature, list(self._labels))
+            indexed._label_history = set(getattr(self, "_label_history", set()))
             return self.space.contract(other, indexed)
         return NotImplemented
 
@@ -1054,7 +1073,9 @@ class Tensor:
                 labels.append(self.space._next_label() if down_i is NO_LABEL else down_i)
 
         A = self.as_signature(tuple(target_sig), simplify=False)
-        return IndexedTensor(self, A, tuple(target_sig), labels)
+        indexed = IndexedTensor(self, A, tuple(target_sig), labels)
+        indexed._label_history = set(getattr(self, "_label_history", set()))
+        return indexed
 
     def up(self, *labels):
         labels = _complete_indices_right(labels, self.rank)
@@ -1240,27 +1261,42 @@ class IndexedTensor:
         ):
             scaled = other * self.components
             tensor = Tensor(scaled, self.tensor.space, signature=self.signature)
-            return IndexedTensor(tensor, tensor.components, tensor.signature, list(self.labels))
+            indexed = IndexedTensor(tensor, tensor.components, tensor.signature, list(self.labels))
+            indexed._label_history = set(getattr(self, "_label_history", set()))
+            return indexed
         if isinstance(other, Tensor) and other.rank == 0:
             scaled = other._as_scalar() * self.components
             tensor = Tensor(scaled, self.tensor.space, signature=self.signature)
-            return IndexedTensor(tensor, tensor.components, tensor.signature, list(self.labels))
+            indexed = IndexedTensor(tensor, tensor.components, tensor.signature, list(self.labels))
+            indexed._label_history = set(getattr(self, "_label_history", set()))
+            return indexed
         if isinstance(other, IndexedTensor):
             space = self.tensor.space
             if other.tensor.space is not space:
                 raise ValueError("Tensores pertencem a TensorSpaces distintos.")
+            history = set(getattr(self, "_label_history", set()))
+            other_history = set(getattr(other, "_label_history", set()))
+            reused = history & set(other.labels)
+            if reused:
+                raise ValueError(f"Indice {sorted(reused)[0]} reutilizado apos contracao.")
+            reused = other_history & set(self.labels)
+            if reused:
+                raise ValueError(f"Indice {sorted(reused)[0]} reutilizado apos contracao.")
             if set(self.labels) & set(other.labels):
                 return space.contract(self, other)
             TP = sp.tensorproduct(self.components, other.components)
             new_sig = self.signature + other.signature
             new_labels = list(self.labels) + list(other.labels)
             tensor = Tensor(TP, space, signature=new_sig)
-            return IndexedTensor(tensor, tensor.components, tensor.signature, new_labels)
+            indexed = IndexedTensor(tensor, tensor.components, tensor.signature, new_labels)
+            indexed._label_history = history | other_history
+            return indexed
         if isinstance(other, Tensor) and hasattr(other, "_labels"):
             space = self.tensor.space
             if other.space is not space:
                 raise ValueError("Tensores pertencem a TensorSpaces distintos.")
             indexed = IndexedTensor(other, other.components, other.signature, list(other._labels))
+            indexed._label_history = set(getattr(other, "_label_history", set()))
             return space.contract(self, indexed)
         return NotImplemented
 
@@ -1270,22 +1306,36 @@ class IndexedTensor:
         ):
             scaled = other * self.components
             tensor = Tensor(scaled, self.tensor.space, signature=self.signature)
-            return IndexedTensor(tensor, tensor.components, tensor.signature, list(self.labels))
+            indexed = IndexedTensor(tensor, tensor.components, tensor.signature, list(self.labels))
+            indexed._label_history = set(getattr(self, "_label_history", set()))
+            return indexed
         if isinstance(other, Tensor) and other.rank == 0:
             scaled = other._as_scalar() * self.components
             tensor = Tensor(scaled, self.tensor.space, signature=self.signature)
-            return IndexedTensor(tensor, tensor.components, tensor.signature, list(self.labels))
+            indexed = IndexedTensor(tensor, tensor.components, tensor.signature, list(self.labels))
+            indexed._label_history = set(getattr(self, "_label_history", set()))
+            return indexed
         if isinstance(other, IndexedTensor):
             space = other.tensor.space
             if self.tensor.space is not space:
                 raise ValueError("Tensores pertencem a TensorSpaces distintos.")
+            history = set(getattr(self, "_label_history", set()))
+            other_history = set(getattr(other, "_label_history", set()))
+            reused = history & set(other.labels)
+            if reused:
+                raise ValueError(f"Indice {sorted(reused)[0]} reutilizado apos contracao.")
+            reused = other_history & set(self.labels)
+            if reused:
+                raise ValueError(f"Indice {sorted(reused)[0]} reutilizado apos contracao.")
             if set(self.labels) & set(other.labels):
                 return space.contract(other, self)
             TP = sp.tensorproduct(other.components, self.components)
             new_sig = other.signature + self.signature
             new_labels = list(other.labels) + list(self.labels)
             tensor = Tensor(TP, space, signature=new_sig)
-            return IndexedTensor(tensor, tensor.components, tensor.signature, new_labels)
+            indexed = IndexedTensor(tensor, tensor.components, tensor.signature, new_labels)
+            indexed._label_history = history | other_history
+            return indexed
         if isinstance(other, Tensor) and hasattr(other, "_labels"):
             space = other.space
             if self.tensor.space is not space:
