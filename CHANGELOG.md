@@ -8,9 +8,13 @@
 - If notebooks or formulas changed, add a minimal reproduction snippet.
 
 ## Unreleased
+_empty_
+
+## v0.1.12
 - expand README with project scope and comparisons
 - add .kanban card metadata scaffolding
 - raise explicit errors on tensor add/sub rank mismatches
+- tests: `python -m pytest` (33 passed in 10.67s)
 
 ## v0.1.11
 - require explicit index variance (+/-) in tensor indexing
