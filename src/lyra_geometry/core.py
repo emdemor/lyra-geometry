@@ -509,11 +509,13 @@ class TensorSpace:
         arr = sp.ImmutableDenseNDimArray(flat, shape)
         return self.register(Tensor(arr, self, signature=signature, name=name, label=label or name))
 
-    def nabla(self, tensor, deriv_position="prepend"):
+    def nabla(self, tensor, order=1, deriv_position="prepend"):
         """
         Derivada covariante de Lyra:
         ∇_k T = (1/phi) ∂_k T + Σ Γ^{a_i}{}_{m k} T^{...m...} - Σ Γ^{m}{}_{b_j k} T_{...m...}
         """
+        if not isinstance(order, int) or order < 1:
+            raise ValueError("order deve ser inteiro >= 1.")
         if self.connection is None:
             raise ValueError("Defina a conexao (Gamma^a_{bc}) em TensorSpace.")
         if isinstance(tensor, Tensor):
@@ -572,7 +574,10 @@ class TensorSpace:
             new_sig = sig + (D,)
         else:
             new_sig = (D,) + sig
-        return Tensor(out, self, signature=new_sig, name=None, label=tensor.label)
+        result = Tensor(out, self, signature=new_sig, name=None, label=tensor.label)
+        if order == 1:
+            return result
+        return self.nabla(result, order=order - 1, deriv_position=deriv_position)
 
     def index(self, names):
         if isinstance(names, str):
@@ -947,8 +952,8 @@ class Tensor:
         self._cache[target_signature] = A
         return A
 
-    def nabla(self, deriv_position="prepend"):
-        return self.space.nabla(self, deriv_position=deriv_position)
+    def nabla(self, order=1, deriv_position="prepend"):
+        return self.space.nabla(self, order=order, deriv_position=deriv_position)
 
     def d(self, coord, deriv_position="append"):
         if isinstance(coord, UpIndex):
