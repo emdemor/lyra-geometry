@@ -29,6 +29,61 @@ For local development:
 python -m pip install -e .[dev]
 ```
 
+## Minimal API reference
+
+Core objects:
+
+- `SpaceTime(coords, metric, connection_strategy=...)`: main high-level API for metrics, connections, and curvature.
+  ```python
+  st = pl.SpaceTime(coords=(x, y), metric=sp.diag(1, 1))
+  st.riemann
+  ```
+- `TensorSpace(dim, labels=...)`: lower-level tensor space without a metric.
+  ```python
+  ts = pl.TensorSpace(dim=2, labels=("x", "y"))
+  ```
+- `Tensor`: tensor container with index-aware arithmetic and contractions.
+  ```python
+  t = st.tensor.generic("T", (pl.U, pl.D))
+  t[+a, -b]
+  ```
+- `Index`, `UpIndex`, `DownIndex`: index labels and variance markers.
+  ```python
+  a, b = st.index("a b")
+  st.g[-a, -b]
+  ```
+- `U`, `D`: convenience aliases for up/down index variance.
+  ```python
+  v = st.tensor.generic("v", (pl.U,))
+  w = st.tensor.generic("w", (pl.D,))
+  ```
+
+Connection and curvature strategies:
+
+- `LyraConnectionStrategy`, `LyraCurvatureStrategy`: default Lyra geometry behavior.
+  ```python
+  st = pl.SpaceTime(coords=(x, y), metric=sp.diag(1, 1))
+  st.gamma
+  ```
+- `FixedConnectionStrategy`: use a fixed connection tensor.
+  ```python
+  Gamma0 = sp.ImmutableDenseNDimArray([0] * 8, (2, 2, 2))
+  st = pl.SpaceTime(coords=(x, y), metric=sp.diag(1, 1),
+                    connection_strategy=pl.FixedConnectionStrategy(Gamma0))
+  ```
+- `Connection`, `ConnectionTensor`, `CurvatureStrategy`: building blocks for custom strategies.
+
+Helpers:
+
+- `example_indexing()`: small demo of index notation.
+  ```python
+  pl.example_indexing()
+  ```
+- `greek()`: helper for common Greek index labels.
+  ```python
+  mu, nu = pl.greek("mu nu")
+  ```
+
 ## What `lyra-geometry` is (and what it is not)
 
 ### What it is

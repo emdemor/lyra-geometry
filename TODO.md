@@ -9,7 +9,7 @@ actionable, and dated when added.
 - Keep scope small; split large items into sub-tasks.
 
 ## Roadmap
-- [ ] Publish minimal API reference in README.
+- [x] Publish minimal API reference in README.
 - [x] Add examples for curvature and connection workflows.
 - [ ] Expand smoke tests for tensor contraction edge cases.
 
