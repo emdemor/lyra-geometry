@@ -540,6 +540,69 @@ class Metric(Tensor):
     pass
 
 
+class IndexedArray(Tensor):
+    def as_signature(self, target_signature, simplify=False):
+        target_signature = _validate_signature(target_signature, self.rank)
+        if target_signature in self._cache:
+            return self._cache[target_signature]
+        self._cache[target_signature] = self.components
+        return self.components
+
+    def __call__(self, *sig):
+        if len(sig) == 1 and isinstance(sig[0], (tuple, list)):
+            sig = tuple(sig[0])
+        if sig and any(isinstance(s, Index) for s in sig):
+            raise TypeError("Use +a/-b para indices com variancia explicita.")
+        if sig and all(isinstance(s, (UpIndex, DownIndex)) for s in sig):
+            if len(sig) != self.rank:
+                raise ValueError("Numero de indices nao bate com o rank do tensor.")
+            up = [None] * self.rank
+            down = [None] * self.rank
+            for i, idx in enumerate(sig):
+                if isinstance(idx, UpIndex):
+                    up[i] = idx.label
+                else:
+                    down[i] = idx.label
+            return self.idx(up=up, down=down)
+        arr = self.as_signature(sig, simplify=False)
+        return IndexedArray(arr, self.space, signature=sig, name=self.name, label=self.label)
+
+    def idx(self, up=None, down=None):
+        rank = self.rank
+        if up is None and down is None:
+            up = [None] * rank
+            down = [None] * rank
+        elif up is None or down is None:
+            raise ValueError("Forneca up e down com o mesmo tamanho do rank.")
+
+        up = list(up)
+        down = list(down)
+        if len(up) != rank or len(down) != rank:
+            raise ValueError("up/down devem ter tamanho igual ao rank do tensor.")
+
+        labels = []
+        target_sig = []
+        for i in range(rank):
+            up_i = _parse_label(up[i], self.space)
+            down_i = _parse_label(down[i], self.space)
+            if up_i is not None and down_i is not None:
+                raise ValueError("Indice nao pode ser up e down na mesma posicao.")
+            if up_i is None and down_i is None:
+                target_sig.append(self.signature[i])
+                labels.append(self.space._next_label())
+            elif up_i is not None:
+                target_sig.append(U)
+                labels.append(self.space._next_label() if up_i is NO_LABEL else up_i)
+            else:
+                target_sig.append(D)
+                labels.append(self.space._next_label() if down_i is NO_LABEL else down_i)
+
+        A = self.as_signature(tuple(target_sig), simplify=False)
+        indexed = IndexedArrayItem(self, A, tuple(target_sig), labels)
+        indexed._label_history = set(getattr(self, "_label_history", set()))
+        return indexed
+
+
 class IndexedTensor:
     def __init__(self, tensor, components, signature, labels):
         self.tensor = tensor
@@ -883,6 +946,15 @@ class IndexedTensor:
         return NotImplemented
 
 
+class IndexedArrayItem(IndexedTensor):
+    def __eq__(self, other):
+        if isinstance(other, IndexedTensor):
+            if other.tensor.space is not self.tensor.space:
+                raise ValueError("Tensores pertencem a TensorSpaces distintos.")
+            return self.components == other.components
+        return NotImplemented
+
+
 class TensorFactory:
     def __init__(self, space):
         self.space = space
@@ -1043,6 +1115,7 @@ __all__ = [
     "Down",
     "DownIndex",
     "Index",
+    "IndexedArray",
     "IndexedTensor",
     "Metric",
     "NO_LABEL",

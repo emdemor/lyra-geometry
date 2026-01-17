@@ -1,0 +1,44 @@
+id: 20
+title: Refatorar indices nao tensoriais para IndexedArray
+type: Feature
+priority: P1
+service_class: Standard
+status: Done
+owner: agent-codex
+
+context: |
+  Elementos como simbolos de Christoffel, delta de Kronecker e o simbolo totalmente antissimetrico
+  de Levi-Civita nao sao tensores, mas hoje usam a classe Tensor. Isso cria bugs porque o Tensor
+  sobe/desce indices contraindo com a metrica automaticamente. Precisamos introduzir um novo tipo
+  IndexedArray, semelhante a Tensor, que trate a variancia apenas como anotacao de indice para
+  contracao, sem aplicar metrica. Esse tipo deve permitir indexacao com +a/-b, detectar erros de
+  repeticao com variancia igual, e contrair automaticamente quando o mesmo rotulo aparece uma vez
+  em posicao up e outra em posicao down. Tambem deve suportar multiplicacao com contracao entre
+  elementos distintos (IndexedArray e Tensor) e retornar Tensor no resultado contrito. Os simbolos
+  de Christoffel (primeiro e segundo) devem ser convertidos para IndexedArray, enquanto a conexao
+  de Lyra (st.gamma) continua sendo a classe Connection. Adicionar o delta de Kronecker e o simbolo
+  de Levi-Civita como IndexedArray no TensorSpace, com componentes consistentes com a dimensao.
+
+acceptance_criteria:
+  - Existe uma classe IndexedArray em src/lyra_geometry/tensors.py que suporta indexacao com +a/-b
+  - IndexedArray nao usa metrica ao mudar variancia e permite st.gamma[+a,-b,-c]==st.gamma[-a,+b,-c]
+  - IndexedArray contrai automaticamente indices repetidos up/down na mesma expressao e retorna Tensor
+  - IndexedArray gera erro quando um rotulo e repetido duas vezes na mesma variancia (ex: +a,+a)
+  - Multiplicacao entre IndexedArray indexado e outro elemento indexado (IndexedArray ou Tensor)
+    contrai indices repetidos e retorna Tensor
+  - TensorSpace.christoffel1 e TensorSpace.christoffel2 sao IndexedArray
+  - TensorSpace.delta (Kronecker) e TensorSpace.levi_civita (simbolo totalmente antissimetrico)
+    existem como IndexedArray com componentes corretos para a dimensao
+  - st.gamma permanece classe Connection
+  - Tests foram atualizados/adicionados e python -m pytest passa
+
+dependencies: []
+blockers: []
+artifacts:
+  - tests/unit/test_indexed_array.py
+  - CHANGELOG.md
+
+technical:
+  estimate: L
+  risk: Medium
+  tags: [Core, Math, API]

@@ -8,6 +8,7 @@ from .tensors import (
     Down,
     DownIndex,
     Index,
+    IndexedArray,
     IndexedTensor,
     Metric,
     NO_LABEL,
@@ -154,6 +155,9 @@ class TensorSpace:
         self.christoffel2 = None
         self.christoffel1 = None
         self._connection_tensor = None
+        self.delta = self._build_kronecker_delta()
+        self.levi_civita = self._build_levi_civita_symbol()
+        self.epsilon = self.levi_civita
         if self.metric is not None:
             self.metric_tensor = self.register(self.metric)
         if self._metric_inv is not None:
@@ -249,6 +253,23 @@ class TensorSpace:
         self._label_count += 1
         return f"_{self._label_count}"
 
+    def _build_kronecker_delta(self):
+        dim = self.dim
+        shape = (dim, dim)
+        flat = [sp.Integer(1) if i == j else sp.Integer(0) for i in range(dim) for j in range(dim)]
+        arr = sp.ImmutableDenseNDimArray(flat, shape)
+        return self.register(IndexedArray(arr, self, signature=(U, D), name="delta", label="delta"))
+
+    def _build_levi_civita_symbol(self):
+        dim = self.dim
+        shape = (dim,) * dim
+        flat = [sp.LeviCivita(*idx) for idx in itertools.product(range(dim), repeat=dim)]
+        arr = sp.ImmutableDenseNDimArray(flat, shape)
+        signature = (D,) * dim
+        return self.register(
+            IndexedArray(arr, self, signature=signature, name="levi_civita", label="epsilon")
+        )
+
     def register(self, tensor):
         self._registry[tensor.name] = tensor
         return tensor
@@ -317,14 +338,14 @@ class TensorSpace:
             )
             for c in range(dim)
         ] for b in range(dim)] for a in range(dim)]
-        self.christoffel1 = ConnectionTensor(sp.Array(chris1), self, signature=(D, D, D), name="christoffel1")
+        self.christoffel1 = IndexedArray(sp.Array(chris1), self, signature=(D, D, D), name="christoffel1")
 
         g_inv = self.metric_inv
         chris2 = [[[
             sum(g_inv[a, D] * self.christoffel1[D, b, c] for D in range(dim))
             for c in range(dim)
         ] for b in range(dim)] for a in range(dim)]
-        self.christoffel2 = ConnectionTensor(sp.Array(chris2), self, signature=(U, D, D), name="christoffel2")
+        self.christoffel2 = IndexedArray(sp.Array(chris2), self, signature=(U, D, D), name="christoffel2")
 
     def _update_connection(self):
         if self.connection_strategy is None:
