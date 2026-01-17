@@ -9,6 +9,11 @@
 
 ## Unreleased
 
+## v0.1.15
+- refactor module layout into core/tensors/diff_ops/invariants/utils with compatibility re-exports
+- docs: add module organization overview
+- tests: `python -m pytest` (39 passed in 11.29s)
+
 ## v0.1.14
 - add curvature invariants helpers (ricci_scalar, kretschmann_scalar) and Euler density
 - add unit tests covering invariants on flat metric
