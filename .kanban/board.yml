@@ -3,5 +3,6 @@ lanes:
     - 0011 - [Feature] Integrar com sympy.diffgeom e sympy.tensor
     - 0015 - [Feature] Create more usage examples
     - 0018 - [TechDebt] Traduzir projeto para ingles
+    - 0019 - [Feature] Adicionar atributos st.nabla_phi e st.nabla_nabla_phi
   Doing: []
   Review: []

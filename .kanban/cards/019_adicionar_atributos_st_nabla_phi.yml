@@ -1,0 +1,27 @@
+id: 19
+title: Adicionar atributos st.nabla_phi e st.nabla_nabla_phi
+type: Feature
+priority: P2
+service_class: Standard
+status: Ready
+owner: agent-codex
+
+context: |
+  Precisamos expor derivados covariantes comuns via atalhos no objeto st, especificamente
+  st.nabla_phi e st.nabla_nabla_phi, para facilitar o uso em exemplos e testes. Esses
+  atributos devem representar as derivadas covariantes de phi e ser consistentes com
+  os objetos de tensor/conexao ja presentes no pacote.
+
+acceptance_criteria:
+  - st.nabla_phi existe e representa a derivada covariante de phi
+  - st.nabla_nabla_phi existe e representa a segunda derivada covariante de phi
+  - Testes unitarios cobrem o acesso e a consistencia basica desses atributos
+
+dependencies: []
+blockers: []
+artifacts: []
+
+technical:
+  estimate: S
+  risk: Low
+  tags: [API, Tensor, Connection]
