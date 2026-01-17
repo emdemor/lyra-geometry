@@ -233,6 +233,14 @@ class TensorSpace:
     def connection(self):
         return self._connection_tensor
 
+    @property
+    def nabla_phi(self):
+        return self.nabla(self.phi, order=1)
+
+    @property
+    def nabla_nabla_phi(self):
+        return self.nabla(self.phi, order=2)
+
     def _next_tensor_name(self):
         self._tensor_count += 1
         return f"T{self._tensor_count}"

@@ -3,7 +3,7 @@ title: Adicionar atributos st.nabla_phi e st.nabla_nabla_phi
 type: Feature
 priority: P2
 service_class: Standard
-status: Ready
+status: Done
 owner: agent-codex
 
 context: |
