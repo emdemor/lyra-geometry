@@ -1,0 +1,39 @@
+id: 13
+title: Refatorar estrutura de funcoes da biblioteca
+type: TechDebt
+priority: P2
+service_class: Standard
+status: Ready
+owner: agent-codex
+
+context: |
+  A biblioteca concentra diversas funcoes utilitarias e metodos no mesmo modulo,
+  o que dificulta navegacao, evolucao da API e manutencao. A refatoracao deve
+  reorganizar a estrutura das funcoes (publicas e internas) com foco em clareza
+  e estabilidade, sem alterar o comportamento externo. Principios a aplicar:
+  separar por responsabilidade (core, tensores, operacoes diferenciais, invariantes),
+  manter API publica estavel (aliases e compatibilidade retroativa),
+  preferir funcoes puras e minimizar efeitos colaterais,
+  evitar dependencias circulares (importacoes unidirecionais),
+  nomeacao explicita e consistente com PEP 8,
+  preservar contratos existentes (erros, tipos, assinaturas),
+  e reforcar coesao e baixo acoplamento entre modulos.
+
+acceptance_criteria:
+  - Funcoes publicas ficam em modulos especificos por dominio (ex.: diff_ops, invariants)
+  - Imports publicos em src/lyra_geometry/__init__.py continuam funcionando
+  - Nao ha mudanca de comportamento observavel nos testes existentes
+  - Ha documentacao curta explicando a nova organizacao e principios adotados
+
+dependencies: []
+blockers: []
+artifacts: []
+
+created_at: null
+started_at: null
+done_at: null
+
+technical:
+  estimate: M
+  risk: Medium
+  tags: [TechDebt, Refactor, API]

@@ -1,5 +1,6 @@
 lanes:
   Ready:
     - 0011 - [Feature] Integrar com sympy.diffgeom e sympy.tensor
+    - 0013 - [TechDebt] Refatorar estrutura de funcoes da biblioteca
   Doing: []
   Review: []
