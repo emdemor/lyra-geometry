@@ -34,6 +34,19 @@ class CurvatureStrategy:
         raise NotImplementedError
 
 
+def _resolve_autoparallel_parameter(parameter):
+    if isinstance(parameter, sp.Symbol):
+        return parameter
+    if isinstance(parameter, str):
+        key = parameter.strip().lower()
+        if key in ("timelike", "tau"):
+            return sp.Symbol("tau")
+        if key in ("null", "lambda"):
+            return sp.Symbol("lambda")
+        return sp.Symbol(parameter)
+    raise TypeError("parameter deve ser string ou simbolo sympy.")
+
+
 class LyraConnectionStrategy(ConnectionStrategy):
     def build(self, space):
         if space.metric is None:
@@ -542,6 +555,43 @@ class TensorSpace:
             return nabla2.contract(nabla2.rank - 2, nabla2.rank - 1)
         raise ValueError("deriv_position deve ser 'append' ou 'prepend'.")
 
+    def autoparallel_equations(self, parameter="tau"):
+        """
+        Calcula as equacoes de curvas autoparalelas 4D para x^mu(s).
+
+        parameter aceita "timelike"/"tau" ou "null"/"lambda" (ou um Symbol).
+        Retorna uma lista com 4 equacoes sympy.Eq para x^0..x^3.
+        Usa a forma autoparalela de Lyra: d2x^a/ds^2 + (phi*Gamma^a_{mu nu} + nabla_nu phi*delta_mu^a) v^mu v^nu = 0.
+        """
+        if self.dim != 4:
+            raise ValueError("Geodesicas exigem dim=4.")
+        if self.metric is None:
+            raise ValueError("Defina a metrica para calcular Christoffel.")
+        if self.christoffel2 is None:
+            self.update(include=("metric", "christoffel"))
+
+        param = _resolve_autoparallel_parameter(parameter)
+        coord_funcs = [sp.Function(str(c))(param) for c in self.coords]
+        subs_map = {self.coords[i]: coord_funcs[i] for i in range(self.dim)}
+        velocities = [sp.diff(f, param) for f in coord_funcs]
+        phi = self.phi.expr if isinstance(self.phi, Tensor) else self.phi
+        phi_sub = phi.subs(subs_map)
+        nabla_phi = [
+            (sp.diff(phi, coord) / phi).subs(subs_map) for coord in self.coords
+        ]
+        Gamma = self.christoffel2
+        equations = []
+        for alpha in range(self.dim):
+            acc = sp.diff(coord_funcs[alpha], param, 2)
+            conn_term = 0
+            for mu in range(self.dim):
+                for nu in range(self.dim):
+                    gamma_val = phi_sub * Gamma[alpha, mu, nu].subs(subs_map)
+                    conn_term += gamma_val * velocities[mu] * velocities[nu]
+            phi_term = sum(nabla_phi[nu] * velocities[alpha] * velocities[nu] for nu in range(self.dim))
+            equations.append(sp.Eq(sp.simplify(acc + conn_term + phi_term), 0))
+        return equations
+
     def ricci_scalar(self):
         if self.ricci is None or self.metric_inv is None or self.scalar_curvature is None:
             self.update(include=("riemann", "ricci", "einstein"))
@@ -692,6 +742,14 @@ class Manifold(TensorSpace):
     pass
 
 
+def autoparallel_equations(metric, coords, parameter="tau", connection_strategy=None):
+    """
+    Construtor rapido para equacoes autoparalelas a partir de metrica e coordenadas.
+    """
+    space = TensorSpace(coords=coords, metric=metric, connection_strategy=connection_strategy)
+    return space.autoparallel_equations(parameter=parameter)
+
+
 def gradient(tensor, space=None, deriv_position="prepend"):
     from .diff_ops import gradient as _gradient
 
@@ -737,6 +795,7 @@ __all__ = [
     "Down",
     "DownIndex",
     "FixedConnectionStrategy",
+    "autoparallel_equations",
     "Index",
     "IndexedTensor",
     "LyraConnectionStrategy",
