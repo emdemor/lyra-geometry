@@ -328,9 +328,11 @@ technical:
   - atualize o status no card para Doing
   - atualize o board
   - faça as alterações
+  - quando fizer sentido, adicione testes unitários relavantes
+  - rode a pipeline de testes para garantir que está tudo funcionando
 
 * Quando finalizar um card
   - atualize o status no card para Doing
   - atualize o board
   - atualize o changelogs
-  - comite as alterações
+  - comite as alterações. O template para a mensagem de commit é "{{card-id}}-{{type-with-no-spaces}}-{{title-with-no-spaces}}"
