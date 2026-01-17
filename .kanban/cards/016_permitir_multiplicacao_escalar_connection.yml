@@ -1,0 +1,27 @@
+id: 16
+title: Permitir multiplicacao escalar de Connection
+type: Bug
+priority: P2
+service_class: Standard
+status: Ready
+owner: agent-codex
+
+context: |
+  Multiplicar um escalar simbolico (por exemplo, phi) por uma Connection falha em tensors.py com TypeError
+  ao executar st.phi * st.gamma, apesar de phi ser um escalar valido no contexto dos tensores. O objetivo e
+  permitir a multiplicacao escalar entre simbolos do SymPy e objetos Connection/IndexedTensor sem quebrar a
+  compatibilidade com o comportamento existente de Tensor.__mul__.
+
+acceptance_criteria:
+  - A expressao st.phi * st.gamma funciona sem erro e retorna um objeto de conexao escalado
+  - A expressao st.gamma * st.phi tambem funciona e e equivalente
+  - Testes unitarios cobrem a multiplicacao escalar de Connection por simbolos do SymPy
+
+dependencies: []
+blockers: []
+artifacts: []
+
+technical:
+  estimate: S
+  risk: Low
+  tags: [Tensors, Connection, SymPy]

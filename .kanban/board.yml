@@ -2,5 +2,6 @@ lanes:
   Ready:
     - 0011 - [Feature] Integrar com sympy.diffgeom e sympy.tensor
     - 0015 - [Feature] Create more usage examples
+    - 0016 - [Bug] Permitir multiplicacao escalar de Connection
   Doing: []
   Review: []
