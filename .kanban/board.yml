@@ -1,7 +1,6 @@
 lanes:
   Ready:
     - 0001 - [Bug] Adicionar erros explicitos para ranks incompativeis
-    - 0005 - [TechDebt] Documentar politica de versao e passos de release
     - 0007 - [Feature] Adicionar operadores diferenciais em campos tensoriais
     - 0010 - [Feature] Adicionar invariantes de curvatura e classes caracteristicas
     - 0011 - [Feature] Integrar com sympy.diffgeom e sympy.tensor

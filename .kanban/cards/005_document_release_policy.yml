@@ -3,7 +3,7 @@ title: Documentar politica de versao e passos de release
 type: TechDebt
 priority: P3
 service_class: Standard
-status: Ready
+status: Done
 owner: agent-codex
 
 context: |
@@ -21,7 +21,7 @@ artifacts: []
 
 created_at: null
 started_at: null
-done_at: null
+done_at: 2026-01-17
 
 technical:
   estimate: S

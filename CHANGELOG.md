@@ -1,5 +1,12 @@
 # Changelog
 
+## Release steps
+- Ensure `Unreleased` entries are complete and grouped by change type.
+- Create a new version header and move the `Unreleased` items into it.
+- Bump the version in `src/lyra_geometry/__init__.py`.
+- Run `python -m pytest` and note the outcome in the new release notes.
+- If notebooks or formulas changed, add a minimal reproduction snippet.
+
 ## Unreleased
 - expand README with project scope and comparisons
 - add .kanban card metadata scaffolding

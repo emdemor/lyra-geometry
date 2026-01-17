@@ -303,6 +303,25 @@ The notebook `examples/example.ipynb` walks through:
 python -m pytest
 ```
 
+## Versioning and release policy
+
+This project follows SemVer 2.0 with a pre-1.0 policy:
+
+- While major is 0, breaking changes bump the minor version.
+- Backward-compatible changes (features, improvements) also bump the minor.
+- Fixes that do not change behavior bump the patch.
+
+The public API is the set of objects exported from `src/lyra_geometry/__init__.py`
+and the behaviors documented in this README. Other internal modules may change
+without notice.
+
+Release checklist (short form):
+
+1. Move items from `Unreleased` into a new version section in `CHANGELOG.md`.
+2. Bump the version in `src/lyra_geometry/__init__.py`.
+3. Run `python -m pytest` and record the outcome in the release notes.
+4. Tag and publish the release.
+
 ## License
 
 MIT. See `LICENSE`.
