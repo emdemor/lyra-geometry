@@ -2,5 +2,6 @@ lanes:
   Ready:
     - 0011 - [Feature] Integrar com sympy.diffgeom e sympy.tensor
     - 0015 - [Feature] Create more usage examples
+    - 0018 - [TechDebt] Traduzir projeto para ingles
   Doing: []
   Review: []

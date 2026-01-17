@@ -1,0 +1,26 @@
+id: 18
+title: Traduzir projeto para ingles
+type: TechDebt
+priority: P2
+service_class: Standard
+status: Ready
+owner: agent-codex
+
+context: |
+  Atualmente a documentacao, exemplos e comentarios do codigo estao majoritariamente em portugues.
+  O objetivo e traduzir todo o conteudo textual voltado ao usuario para ingles de forma consistente,
+  mantendo o significado tecnico e sem alterar o comportamento da biblioteca.
+
+acceptance_criteria:
+  - README.md e CHANGELOG.md estao integralmente em ingles
+  - Comentarios em src/ e tests/ estao em ingles ou removidos quando redundantes
+  - Exemplos e mensagens de erro publicas aparecem em ingles
+
+dependencies: []
+blockers: []
+artifacts: []
+
+technical:
+  estimate: M
+  risk: Low
+  tags: [Docs, Localization]
