@@ -3,6 +3,11 @@
 ## Unreleased
 - expand README with project scope and comparisons
 
+## v0.1.11
+- require explicit index variance (+/-) in tensor indexing
+- prevent label reuse after contraction in chained multiplications
+- document explicit index variance in README
+
 ## v0.1.10
 - aceaf76 bump version to 0.1.10
 - b9adcc9 add tag trigger on cicd

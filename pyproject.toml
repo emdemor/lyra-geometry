@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "lyra-geometry"
-version = "0.1.10"
+version = "0.1.11"
 description = "Biblioteca em Python para geometria diferencial simbolica: tensores, conexoes e curvatura."
 readme = "README.md"
 requires-python = ">=3.9"
