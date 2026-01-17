@@ -29,6 +29,89 @@ For local development:
 python -m pip install -e .[dev]
 ```
 
+## What `lyra-geometry` is (and what it is not)
+
+### What it is
+
+The `lyra-geometry` is a symbolic library to work with relativistic gravity thoeries. Concretely, `lyra-geometry` provides:
+
+- **Exact symbolic tensor calculus** built on top of SymPy.
+- A clean, object-oriented **`SpaceTime` abstraction** that organizes:
+  - metric, inverse metric, and determinant,
+  - Levi–Civita connection (by default),
+  - Riemann, Ricci, Einstein tensors, and scalar curvature,
+  - covariant derivatives with correct index bookkeeping.
+- **Explicit index variance (up/down indices)** with:
+  - readable index notation,
+  - **automatic Einstein summation** on repeated labels.
+- A workflow designed for **interactive notebooks and analytic derivations**,
+  where expressions remain transparent and inspectable at every step.
+
+In this default configuration, `lyra-geometry` behaves exactly as a **symbolic
+GR toolkit**.
+
+Where the library *extends beyond* standard GR is in its **native support for
+Lyra geometry and related non-Riemannian structures**:
+
+- the Lyra scale field $\phi$ can be introduced when desired,
+- alternative connection strategies,
+- optional torsion and non-metricity sectors.
+
+These features are **opt-in**. They do not interfere with ordinary GR unless
+explicitly enabled.
+
+In short:  
+**`lyra-geometry` is a symbolic GR library first, and a Lyra-geometry laboratory
+second.**
+
+---
+
+### What it is NOT
+
+To set expectations clearly, `lyra-geometry` is **not**:
+
+- A numerical relativity or cosmological simulation framework.
+- A high-performance or HPC-oriented tensor engine.
+- A “black-box” solver that automatically derives or solves field equations.
+- A replacement for large, monolithic CAS environments (e.g. full SageMath).
+- A library that enforces Lyra geometry or non-Riemannian assumptions by default.
+
+If you never introduce a scale field, torsion, or non-metricity, the library
+remains **purely Riemannian and fully compatible with standard GR practice**.
+
+---
+
+### When it makes sense to use it
+
+`lyra-geometry` is particularly well suited if you want to:
+
+- perform **symbolic GR calculations** with explicit index control,
+- derive connections and curvature tensors from a metric in a reproducible way,
+- check lengthy analytic derivations while minimizing index errors,
+- work entirely in Python notebooks with a clean, inspectable API,
+- explore extensions of GR (Lyra geometry, alternative connections) **without
+  rewriting your tensor infrastructure**.
+
+If your primary goal is large-scale numerics, data-driven cosmology, or
+observational pipelines, this library is best used **in combination with other
+tools**, or not at all.
+
+### Comparison with common GR / tensor libraries
+
+| Library            | Symbolic | Index Notation | Automatic Contraction | Curvature & Connection | Lyra Geometry | Numeric Focus | Philosophy |
+|--------------------|----------|----------------|------------------------|------------------------|---------------|---------------|------------|
+| SymPy (tensor)     | ✅       | ⚠️ (low-level) | ⚠️ manual              | ⚠️ partial             | ❌            | ❌            | General-purpose CAS |
+| EinsteinPy         | ✅       | ✅              | ⚠️ partial              | ✅ (GR)                | ❌            | ✅            | End-to-end GR |
+| SageManifolds      | ✅       | ✅              | ✅                      | ✅ (very rich)         | ❌            | ⚠️            | Full math environment |
+| Cadabra            | ✅       | ✅              | ✅ (very strong)        | ⚠️ user-defined        | ❌            | ❌            | QFT/GR CAS |
+| OGRePy             | ✅       | ✅              | ✅                      | ✅ (GR)                | ❌            | ❌            | OO GR toolkit |
+| RicciPy            | ✅       | ⚠️              | ⚠️                      | ✅ (GR)                | ❌            | ❌            | Ricci calculus |
+| Pytearcat          | ✅       | ✅              | ✅                      | ⚠️ limited             | ❌            | ❌            | GR calculator |
+| galgebra           | ✅       | ❌              | ❌                      | ❌                     | ❌            | ❌            | Geometric algebra |
+| PyMetric           | ⚠️       | ❌              | ❌                      | ⚠️                     | ❌            | ⚠️            | Coord-based DG |
+| **lyra-geometry**  | ✅       | ✅ (core)       | ✅ (automatic)          | ✅ (Lyra & Riemann)    | ✅            | ❌            | Symbolic DG focused on Lyra |
+
+
 ## Getting started
 
 Create a space with a metric, then inspect its basic objects:

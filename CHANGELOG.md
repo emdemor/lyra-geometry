@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- expand README with project scope and comparisons
 
 ## v0.1.10
 - aceaf76 bump version to 0.1.10
