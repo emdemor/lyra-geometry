@@ -1,10 +1,33 @@
 # Repository Guidelines
 
+## Precedence Rule
+
+This file (`agents.md`) has **higher priority** than:
+- README.md
+- CONTRIBUTING.md
+- inline code comments (unless explicitly stated)
+
+If a conflict exists, agents MUST follow this file.
+
+## Agent Scope of Action
+
+Agents are allowed to:
+- Modify source code under `src/`
+- Add or update tests under `tests/`
+- Update `.kanban` files according to execution flow
+- Update `CHANGELOG.md` when acceptance criteria are met
+
+Agents MUST NOT:
+- Introduce new external dependencies without explicit card approval
+- Refactor unrelated code
+- Modify API behavior outside the card scope
+- Close or remove Kanban cards without setting status to `Done`
+
 ## How to update versions?
 - Bump the version in `pyproject.toml` and `src/lyra_geometry/__init__.py` to the same value.
 - Update `CHANGELOG.md` by moving `Unreleased` entries into a new `vX.Y.Z` section (and add the test note if run).
 
-## How publish is done?
+## How is publishing done?
 - Publish runs via GitHub Actions on tag pushes matching `v*` in `.github/workflows/publish.yml`.
 - The workflow syncs `pyproject.toml` version from `src/lyra_geometry/__init__.py`, builds with `python -m build`, and publishes to PyPI using `PYPI_API_TOKEN`.
 - Create a version tag (`vX.Y.Z`) and push it to the remote to trigger the publish workflow.
@@ -357,6 +380,6 @@ technical:
 * Update the board
 * Update the changelogs
 * Commit the changes using the template:
-  `{{card-id}}-[{{type}}]-{{title}}`. Example: `0007-[feature]-adicionar-operadores-diferenciais-em-campos-tensoriais`
+  `{{id}}-[{{type | lower}}]-{{kebab-case(title)}}`. Example: `0007-[feature]-adicionar-operadores-diferenciais-em-campos-tensoriais`
 
 ```
