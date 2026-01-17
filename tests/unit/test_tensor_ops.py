@@ -4,13 +4,15 @@ import sympy as sp
 from lyra_geometry import Tensor, TensorSpace, U, D
 
 
-def test_index_infers_variance_from_tensor_signature(space_flat):
-    """Ensure Index labels inherit variance from the tensor signature."""
+def test_index_requires_explicit_variance(space_flat):
+    """Reject bare Index labels and require explicit +/-. """
     a, b, c = space_flat.index("a b c")
     t = space_flat.generic("T", (U, D))
-    indexed = t[a, b]
+    with pytest.raises(TypeError):
+        _ = t[a, b]
+    indexed = t[+a, -b]
     assert indexed.signature == (U, D)
-    contracted = t[a, b] * t[c, a]
+    contracted = t[+a, -b] * t[+c, -a]
     assert isinstance(contracted, Tensor)
     assert contracted.rank == 2
 
@@ -20,7 +22,7 @@ def test_einstein_contraction_on_repeated_labels(space_flat):
     a, b, c = space_flat.index("a b c")
     t = space_flat.generic("T", (U, D))
     s = space_flat.generic("S", (U, D))
-    contracted = t[a, b] * s[c, a]
+    contracted = t[+a, -b] * s[+c, -a]
     assert isinstance(contracted, Tensor)
     assert contracted.rank == 2
 
@@ -44,7 +46,7 @@ def test_subtraction_of_contracted_tensors_returns_tensor(space_flat):
     """Support subtraction of tensors with matching signature and space."""
     a, s, l, m, n = space_flat.index("a s l m n")
     gamma = space_flat.christoffel2
-    expr = gamma[s, a, n] * gamma[l, s, m] - gamma[s, a, m] * gamma[l, s, n]
+    expr = gamma[+s, -a, -n] * gamma[+l, -s, -m] - gamma[+s, -a, -m] * gamma[+l, -s, -n]
     assert isinstance(expr, Tensor)
     assert expr.rank == 4
 
@@ -54,8 +56,8 @@ def test_subtraction_aligns_labels_before_combining(space_flat):
     a, b, c = space_flat.index("a b c")
     t = space_flat.from_array([[1, 2], [3, 4]], signature=(U, D))
     s = space_flat.from_array([[5, 6], [7, 8]], signature=(U, D))
-    expr1 = t[a, b] * s[c, a]
-    expr2 = t[a, c] * s[b, a]
+    expr1 = t[+a, -b] * s[+c, -a]
+    expr2 = t[+a, -c] * s[+b, -a]
     diff = expr1 - expr2
     expected = sp.ImmutableDenseNDimArray(
         [
@@ -83,7 +85,10 @@ def test_contracted_connection_terms_follow_label_order(space_flat):
     st.set_scale(sp.Function("phi")(t))
     st.update()
     gamma = st.christoffel2
-    expr1 = gamma[s, a, n] * gamma[l, s, m] - gamma[s, a, m] * gamma[l, s, n]
+    expr1 = (
+        gamma[+s, -a, -n] * gamma[+l, -s, -m]
+        - gamma[+s, -a, -m] * gamma[+l, -s, -n]
+    )
 
     def teste(l_idx, a_idx, m_idx, n_idx):
         gamma_local = st.christoffel2
@@ -104,7 +109,7 @@ def test_tensor_reorders_axes_by_explicit_index(space_flat):
     a, b, c = space_flat.index("a b c")
     t = space_flat.from_array([[1, 2], [3, 4]], signature=(U, D))
     s = space_flat.from_array([[5, 6], [7, 8]], signature=(U, D))
-    expr = t[a, b] * s[c, a]
+    expr = t[+a, -b] * s[+c, -a]
     reordered = TensorSpace.tensor(space_flat, expr, index=(+c, -b))
     expected = sp.permutedims(expr.components, (1, 0))
     assert reordered.components == expected
@@ -115,7 +120,7 @@ def test_tensor_factory_call_reorders_axes(space_flat):
     a, b, c = space_flat.index("a b c")
     t = space_flat.from_array([[1, 2], [3, 4]], signature=(U, D))
     s = space_flat.from_array([[5, 6], [7, 8]], signature=(U, D))
-    expr = t[a, b] * s[c, a]
+    expr = t[+a, -b] * s[+c, -a]
     reordered = TensorSpace.tensor(space_flat, expr, index=(+c, -b))
     via_factory = space_flat.tensor(expr, index=(+c, -b))
     assert via_factory.components == reordered.components
@@ -126,7 +131,7 @@ def test_indexed_tensor_addition_rejects_label_variance_mismatch(space_flat):
     a, b = space_flat.index("a b")
     t = space_flat.from_array([[1, 2], [3, 4]], signature=(U, D))
     with pytest.raises(ValueError):
-        _ = t[a, b] + t[b, a]
+        _ = t[+a, -b] + t[+b, -a]
 
 
 def test_indexed_tensor_division_scales_components(space_flat):
@@ -134,7 +139,7 @@ def test_indexed_tensor_division_scales_components(space_flat):
     a, b = space_flat.index("a b")
     t = space_flat.from_array([[2, 4], [6, 8]], signature=(U, D))
     expr = sp.Symbol("k")
-    scaled = t[a, b] / expr
+    scaled = t[+a, -b] / expr
     assert scaled.components[0, 0] == t.components[0, 0] / expr
 
 
@@ -144,6 +149,6 @@ def test_indexed_tensor_partial_derivative_uses_coord_index(space_flat):
     m, n = space_flat.coord_index("m n")
     a, b = space_flat.index("a b")
     t = space_flat.generic("T", (U, D))
-    dt = t[a, b].d(-m)
+    dt = t[+a, -b].d(-m)
     assert dt.components[0, 0, 0] == sp.diff(t.components[0, 0], x)
     assert dt.signature == (U, D, D)

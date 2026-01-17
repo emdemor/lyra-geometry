@@ -12,7 +12,7 @@ actionable, and dated when added.
 - [x] Publish minimal API reference in README.
 - [x] Add examples for curvature and connection workflows.
 - [x] Expand smoke tests for tensor contraction edge cases.
-- [ ] Require explicit index variance (+/-) in tensor indexing; disallow abstract indices.
+- [x] Require explicit index variance (+/-) in tensor indexing; disallow abstract indices.
 
 ## Known issues
 - [ ] Missing explicit error messages for incompatible tensor ranks.

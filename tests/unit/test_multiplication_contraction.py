@@ -9,7 +9,7 @@ def test_single_tensor_repeated_labels_contracts_to_scalar(space_flat):
     """Contract a single tensor when the same label appears in up/down positions."""
     a = space_flat.index("a")
     t = space_flat.generic("T", (U, D))
-    contracted = t[a, a]
+    contracted = t[+a, -a]
     assert isinstance(contracted, Tensor)
     assert contracted.rank == 0
 
@@ -19,7 +19,7 @@ def test_tensor_tensor_multiplication_contracts_repeated_labels(space_flat):
     a, b, c = space_flat.index("a b c")
     t = space_flat.generic("T", (U, D))
     s = space_flat.generic("S", (U, D))
-    contracted = t[a, b] * s[c, a]
+    contracted = t[+a, -b] * s[+c, -a]
     assert isinstance(contracted, Tensor)
     assert contracted.rank == 2
     assert contracted.signature == (D, U)
@@ -30,7 +30,7 @@ def test_tensor_connection_multiplication_contracts_repeated_labels(space_flat):
     a, b, c, d = space_flat.index("a b c d")
     t = space_flat.generic("T", (U, D))
     gamma = space_flat.christoffel2
-    contracted = gamma[a, b, c] * t[d, a]
+    contracted = gamma[+a, -b, -c] * t[+d, -a]
     assert isinstance(contracted, Tensor)
     assert contracted.rank == 3
 
@@ -74,7 +74,7 @@ def test_number_times_indexed_tensor_then_connection_contracts(space_flat):
     a, b, c, d = space_flat.index("a b c d")
     t = space_flat.generic("T", (U, D))
     gamma = space_flat.christoffel2
-    mixed = 2 * t[a, b] * gamma[c, a, d]
+    mixed = 2 * t[+a, -b] * gamma[+c, -a, -d]
     assert isinstance(mixed, Tensor)
     assert mixed.rank == 3
 
@@ -86,7 +86,7 @@ def test_sympy_tensor_connection_chain_contracts_multiple_labels(space_flat, coo
     s = space_flat.generic("S", (U, D))
     gamma = space_flat.christoffel2
     expr = sp.cos(coords[0])
-    mixed = expr * t[a, b] * s[c, a] * gamma[d, c, e]
+    mixed = expr * t[+a, -b] * s[+c, -a] * gamma[+d, -c, -e]
     assert isinstance(mixed, Tensor)
     assert mixed.rank == 3
 
@@ -98,7 +98,7 @@ def test_contract_raises_on_triplicate_label(space_flat):
     s = space_flat.generic("S", (U, D))
     u = space_flat.generic("U", (U, D))
     with pytest.raises(ValueError):
-        _ = space_flat.contract(t[a, b], s[c, a], u[d, a])
+        _ = space_flat.contract(t[+a, -b], s[+c, -a], u[+d, -a])
 
 
 def test_contract_raises_on_same_variance_labels(space_flat):
@@ -107,7 +107,7 @@ def test_contract_raises_on_same_variance_labels(space_flat):
     t = space_flat.generic("T", (U, U))
     s = space_flat.generic("S", (U, U))
     with pytest.raises(ValueError):
-        _ = t[a, b] * s[c, a]
+        _ = t[+a, +b] * s[+c, +a]
 
 def test_index_order():
     """Compare terms using a matching component index order."""

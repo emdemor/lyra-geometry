@@ -472,11 +472,8 @@ class TensorSpace:
             elif isinstance(idx, DownIndex):
                 target_labels.append(idx.label)
                 target_sig.append(D)
-            elif isinstance(idx, Index):
-                target_labels.append(idx.name)
-                target_sig.append(None)
             else:
-                raise TypeError("Use apenas a, +a/-b (ou U(a)/D(b)) no index.")
+                raise TypeError("Use apenas +a/-b (ou U(a)/D(b)) no index.")
 
         if any(lab is None or lab is NO_LABEL for lab in target_labels):
             raise ValueError("Indices devem ter rotulos explicitos para reordenacao.")
@@ -728,6 +725,8 @@ class Tensor:
     def __call__(self, *sig):
         if len(sig) == 1 and isinstance(sig[0], (tuple, list)):
             sig = tuple(sig[0])
+        if sig and any(isinstance(s, Index) for s in sig):
+            raise TypeError("Use +a/-b para indices com variancia explicita.")
         if sig and all(isinstance(s, (UpIndex, DownIndex)) for s in sig):
             if len(sig) != self.rank:
                 raise ValueError("Numero de indices nao bate com o rank do tensor.")
@@ -746,8 +745,10 @@ class Tensor:
         if not isinstance(indices, tuple):
             indices = (indices,)
         if any(isinstance(idx, (UpIndex, DownIndex, Index)) for idx in indices):
-            if not all(isinstance(idx, (UpIndex, DownIndex, Index)) for idx in indices):
-                raise TypeError("Use apenas a, +a/-b (ou U(a)/D(b)) para indexar o tensor.")
+            if any(isinstance(idx, Index) for idx in indices):
+                raise TypeError("Use +a/-b para indices com variancia explicita.")
+            if not all(isinstance(idx, (UpIndex, DownIndex)) for idx in indices):
+                raise TypeError("Use apenas +a/-b (ou U(a)/D(b)) para indexar o tensor.")
             if len(indices) != self.rank:
                 raise ValueError("Numero de indices nao bate com o rank do tensor.")
             up = [None] * self.rank
@@ -757,11 +758,6 @@ class Tensor:
                     up[i] = idx.label
                 elif isinstance(idx, DownIndex):
                     down[i] = idx.label
-                else:
-                    if self.signature[i] is U:
-                        up[i] = idx.name
-                    else:
-                        down[i] = idx.name
             indexed = self.idx(up=up, down=down)
             labels = indexed.labels
             if len(set(labels)) != len(labels):
@@ -1114,8 +1110,10 @@ class IndexedTensor:
         labels = list(self.labels)
         if isinstance(coord, UpIndex):
             raise ValueError("Indice de derivada deve ser covariante.")
-        if isinstance(coord, (DownIndex, Index)):
-            lab = coord.label if isinstance(coord, DownIndex) else coord.name
+        if isinstance(coord, Index):
+            raise ValueError("Use +a/-b para indices com variancia explicita.")
+        if isinstance(coord, DownIndex):
+            lab = coord.label
             if lab is None or lab is NO_LABEL:
                 raise ValueError("Indice de derivada deve ter rotulo explicito.")
             coords = self.tensor.space.coords
@@ -1218,9 +1216,9 @@ class IndexedTensor:
         if isinstance(idx, (UpIndex, DownIndex)):
             label = idx.label
         elif isinstance(idx, Index):
-            label = idx.name
+            raise ValueError("Use +a/-b para indices com variancia explicita.")
         else:
-            label = str(idx).strip()
+            raise ValueError("Use +a/-b para indices com variancia explicita.")
         matches = [i for i, lab in enumerate(self.labels) if lab == label]
         if len(matches) != 1:
             raise ValueError(f"Indice {label!r} nao encontrado ou duplicado.")
