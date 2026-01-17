@@ -1,0 +1,29 @@
+id: 11
+title: Integrar com sympy.diffgeom e sympy.tensor
+type: Feature
+priority: P3
+service_class: Standard
+status: Ready
+owner: agent-codex
+
+context: |
+  Nao ha interoperabilidade com as APIs nativas do SymPy, o que impede reuso de
+  estruturas existentes em sympy.diffgeom e sympy.tensor.
+
+acceptance_criteria:
+  - Existem funcoes de conversao para e de objetos sympy.diffgeom e sympy.tensor
+  - A conversao preserva indices e componentes para um exemplo basico
+  - Ha teste ou exemplo minimo documentado com roundtrip simples
+
+dependencies: []
+blockers: []
+artifacts: []
+
+created_at: null
+started_at: null
+done_at: null
+
+technical:
+  estimate: M
+  risk: Medium
+  tags: [Feature, SymPy, Interop]

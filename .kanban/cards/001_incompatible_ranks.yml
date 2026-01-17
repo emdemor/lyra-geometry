@@ -1,0 +1,28 @@
+id: 1
+title: Adicionar erros explicitos para ranks incompativeis
+type: Bug
+priority: P2
+service_class: Standard
+status: Ready
+owner: agent-codex
+
+context: |
+  Hoje operacoes com ranks incompativeis podem falhar de forma silenciosa ou com
+  mensagens vagas, o que dificulta diagnostico ao compor tensores.
+
+acceptance_criteria:
+  - Operacoes entre ranks incompativeis levantam ValueError com mensagem objetiva
+  - Os testes cobrem ao menos um caso de rank incompativel
+
+dependencies: []
+blockers: []
+artifacts: []
+
+created_at: null
+started_at: null
+done_at: null
+
+technical:
+  estimate: S
+  risk: Low
+  tags: [Core, Validation]

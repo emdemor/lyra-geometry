@@ -1,0 +1,28 @@
+id: 3
+title: Adicionar type hints nas APIs publicas principais
+type: TechDebt
+priority: P2
+service_class: Standard
+status: Backlog
+owner: agent-codex
+
+context: |
+  As APIs principais em src/lyra_geometry/core.py ainda nao tem type hints, o que
+  dificulta uso com editores e checagem estatica basica.
+
+acceptance_criteria:
+  - Funcoes e classes publicas do modulo core possuem type hints
+  - O projeto roda sem erros de importacao apos adicionar os hints
+
+dependencies: []
+blockers: []
+artifacts: []
+
+created_at: null
+started_at: null
+done_at: null
+
+technical:
+  estimate: M
+  risk: Low
+  tags: [Core, Typing]

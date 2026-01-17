@@ -1,0 +1,29 @@
+id: 8
+title: Suportar frames ortonormais e conexoes com torsao
+type: Feature
+priority: P3
+service_class: Standard
+status: Backlog
+owner: agent-codex
+
+context: |
+  A biblioteca assume bases coordenadas e conexoes sem torsao, o que dificulta
+  modelar vielbeins e geometrias com torsao nao nula.
+
+acceptance_criteria:
+  - E possivel definir um frame ortonormal (vielbein) associado a uma metrica
+  - E possivel construir conexao com torsao nao nula a partir do frame
+  - Existe teste ou exemplo minimo com torsao diferente de zero
+
+dependencies: []
+blockers: []
+artifacts: []
+
+created_at: null
+started_at: null
+done_at: null
+
+technical:
+  estimate: L
+  risk: High
+  tags: [Feature, Frames, Torsion]

@@ -1,0 +1,28 @@
+id: 2
+title: Mapear gargalos de desempenho com expressoes SymPy grandes
+type: Research
+priority: P2
+service_class: Standard
+status: Backlog
+owner: agent-codex
+
+context: |
+  Expressoes simbolicas grandes deixam o fluxo lento, mas ainda nao ha dados
+  sobre onde o tempo esta sendo gasto nas operacoes principais.
+
+acceptance_criteria:
+  - Existe um relatorio curto com os 3 principais hotspots e tempos medidos
+  - O relatorio referencia um script ou snippet de reproducao
+
+dependencies: []
+blockers: []
+artifacts: []
+
+created_at: null
+started_at: null
+done_at: null
+
+technical:
+  estimate: M
+  risk: Medium
+  tags: [Perf, SymPy]

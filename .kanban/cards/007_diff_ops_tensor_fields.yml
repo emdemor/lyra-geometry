@@ -1,0 +1,29 @@
+id: 7
+title: Adicionar operadores diferenciais em campos tensoriais
+type: Feature
+priority: P3
+service_class: Standard
+status: Ready
+owner: agent-codex
+
+context: |
+  Hoje nao existem utilitarios para gradiente, divergencia e laplaciano em
+  campos tensoriais, exigindo implementacoes manuais pelos usuarios.
+
+acceptance_criteria:
+  - Existem funcoes publicas gradient, divergence e laplacian
+  - As funcoes aceitam ao menos campos escalares e vetoriais
+  - Ha testes cobrindo um exemplo simples para cada operador
+
+dependencies: []
+blockers: []
+artifacts: []
+
+created_at: null
+started_at: null
+done_at: null
+
+technical:
+  estimate: M
+  risk: Medium
+  tags: [Feature, Operators]

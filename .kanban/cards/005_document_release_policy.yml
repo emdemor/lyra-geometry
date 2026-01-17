@@ -1,0 +1,29 @@
+id: 5
+title: Documentar politica de versao e passos de release
+type: TechDebt
+priority: P3
+service_class: Standard
+status: Ready
+owner: agent-codex
+
+context: |
+  O projeto ainda nao descreve uma politica de versao e o fluxo de release, o
+  que pode causar inconsistencias quando novas versoes forem publicadas.
+  Deve-se criar uma política com base nas melhores práticas de engenharia de software.
+
+acceptance_criteria:
+  - README ou docs traz uma secao de politica de versao
+  - CHANGELOG descreve os passos de release esperados
+
+dependencies: []
+blockers: []
+artifacts: []
+
+created_at: null
+started_at: null
+done_at: null
+
+technical:
+  estimate: S
+  risk: Low
+  tags: [Docs, Release]

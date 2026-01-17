@@ -1,0 +1,29 @@
+id: 12
+title: Criar API de simplificacao com simetrias e formas normais
+type: Feature
+priority: P3
+service_class: Standard
+status: Backlog
+owner: agent-codex
+
+context: |
+  A simplificacao de expressoes tensoriais depende de SymPy puro e nao aplica
+  regras de simetria (Riemann, Bianchi) nem formas normais do dominio.
+
+acceptance_criteria:
+  - Existe API publica simplify_tensor com regras de simetria configuraveis
+  - As regras incluem ao menos simetrias de Riemann e identidade de Bianchi
+  - Ha teste que reduz uma expressao conhecida a uma forma normal esperada
+
+dependencies: []
+blockers: []
+artifacts: []
+
+created_at: null
+started_at: null
+done_at: null
+
+technical:
+  estimate: L
+  risk: High
+  tags: [Feature, Simplification]

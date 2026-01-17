@@ -1,0 +1,29 @@
+id: 10
+title: Adicionar invariantes de curvatura e classes caracteristicas
+type: Feature
+priority: P3
+service_class: Standard
+status: Ready
+owner: agent-codex
+
+context: |
+  O pacote calcula tensores de curvatura, mas nao oferece invariantes escalares
+  ou classes caracteristicas simplificadas para analises globais.
+
+acceptance_criteria:
+  - Existem funcoes publicas ricci_scalar e kretschmann_scalar
+  - Existe ao menos uma classe caracteristica (Euler ou Chern) implementada
+  - Ha teste ou exemplo minimo para um invariante em metrica simples
+
+dependencies: []
+blockers: []
+artifacts: []
+
+created_at: null
+started_at: null
+done_at: null
+
+technical:
+  estimate: M
+  risk: Medium
+  tags: [Feature, Invariants]

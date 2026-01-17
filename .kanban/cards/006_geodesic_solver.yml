@@ -1,0 +1,29 @@
+id: 6
+title: Adicionar solver de geodesicas com condicoes iniciais
+type: Feature
+priority: P3
+service_class: Standard
+status: Backlog
+owner: agent-codex
+
+context: |
+  O projeto nao oferece um solver para equacoes de geodesicas com condicoes
+  iniciais, limitando estudos dinamicos e exemplos numericos/simbolicos.
+
+acceptance_criteria:
+  - Existe funcao publica solve_geodesic exportada em lyra_geometry
+  - solve_geodesic aceita condicoes iniciais de ponto e velocidade
+  - Ha um teste ou exemplo minimo exercitando o solver com uma metrica simples
+
+dependencies: []
+blockers: []
+artifacts: []
+
+created_at: null
+started_at: null
+done_at: null
+
+technical:
+  estimate: L
+  risk: Medium
+  tags: [Feature, Geodesic]

@@ -1,0 +1,29 @@
+id: 9
+title: Adicionar operadores diferenciais e Hodge star em variedades genericas
+type: Feature
+priority: P3
+service_class: Standard
+status: Backlog
+owner: agent-codex
+
+context: |
+  Ainda nao ha suporte para operadores diferenciais em formas diferenciais e
+  para o Hodge star em variedades genericas com metrica e orientacao.
+
+acceptance_criteria:
+  - Existe operador hodge_star para formas de grau p
+  - Existem operadores d, codifferential e laplacian em formas diferenciais
+  - Ha teste ou exemplo minimo validando hodge_star em uma variedade 2D
+
+dependencies: []
+blockers: []
+artifacts: []
+
+created_at: null
+started_at: null
+done_at: null
+
+technical:
+  estimate: L
+  risk: High
+  tags: [Feature, Hodge, Forms]

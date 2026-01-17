@@ -1,0 +1,28 @@
+id: 4
+title: Criar script simples de benchmark
+type: TechDebt
+priority: P3
+service_class: Standard
+status: Backlog
+owner: agent-codex
+
+context: |
+  Nao existe um script padrao para medir tempos basicos das operacoes centrais,
+  o que dificulta acompanhar regressao de desempenho.
+
+acceptance_criteria:
+  - Ha um script de benchmark em um caminho documentado
+  - O script roda pelo menos dois cenarios com saida de tempo
+
+dependencies: []
+blockers: []
+artifacts: []
+
+created_at: null
+started_at: null
+done_at: null
+
+technical:
+  estimate: S
+  risk: Low
+  tags: [Perf, Tooling]
