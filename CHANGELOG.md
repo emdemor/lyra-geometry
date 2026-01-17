@@ -8,6 +8,8 @@
 - If notebooks or formulas changed, add a minimal reproduction snippet.
 
 ## Unreleased
+
+## v0.1.15
 - refactor module layout into core/tensors/diff_ops/invariants/utils with compatibility re-exports
 - docs: add module organization overview
 - tests: `python -m pytest` (39 passed in 11.29s)
