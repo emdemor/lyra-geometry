@@ -357,6 +357,6 @@ technical:
 * Update the board
 * Update the changelogs
 * Commit the changes using the template:
-  `{{card-id}}-{{type-with-no-spaces}}-{{title-with-no-spaces}}`
+  `{{card-id}}-[{{type}}]-{{title-with-no-spaces}}`. Example: `0007-[feature]-adicionar-operadores-diferenciais-em-campos-tensoriais`
 
 ```
