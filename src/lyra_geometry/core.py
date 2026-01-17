@@ -152,6 +152,7 @@ class TensorSpace:
         self._detg = None
         self.christoffel2 = None
         self.christoffel1 = None
+        self._connection_tensor = None
         if self.metric is not None:
             self.metric_tensor = self.register(self.metric)
         if self._metric_inv is not None:
@@ -227,7 +228,7 @@ class TensorSpace:
 
     @property
     def connection(self):
-        return self.gamma.components
+        return self._connection_tensor
 
     def _next_tensor_name(self):
         self._tensor_count += 1
@@ -247,6 +248,10 @@ class TensorSpace:
     def set_connection(self, connection):
         self.connection_strategy = FixedConnectionStrategy(connection)
         self.gamma = Connection(connection)
+        if connection is not None:
+            self._connection_tensor = ConnectionTensor(sp.Array(connection), self, signature=(U, D, D), name="connection")
+        else:
+            self._connection_tensor = None
 
     def set_scale(self, phi=None, coord_index=None):
         if phi is None:
@@ -313,9 +318,14 @@ class TensorSpace:
     def _update_connection(self):
         if self.connection_strategy is None:
             self.gamma = Connection(None)
+            self._connection_tensor = None
             return
         Gamma = self.connection_strategy.build(self)
         self.gamma = Connection(Gamma) if Gamma is not None else Connection(None)
+        if Gamma is not None:
+            self._connection_tensor = ConnectionTensor(sp.Array(Gamma), self, signature=(U, D, D), name="connection")
+        else:
+            self._connection_tensor = None
 
     def _update_riemann(self):
         if self.curvature_strategy is None:
