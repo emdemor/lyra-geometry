@@ -9,6 +9,10 @@
 
 ## Unreleased
 
+## v0.1.18
+- docs: translate user-facing strings and notebook outputs to English
+- tests: `python -m pytest` (53 passed in 26.09s)
+
 ## v0.1.17
 - add IndexedArray for non-tensor indexed objects, with variance-only indexing and Einstein contraction rules
 - change Christoffel symbols to IndexedArray and add Kronecker delta + Levi-Civita symbol to TensorSpace
@@ -120,7 +124,7 @@
 - 15f2325 add fmt
 - f70cc6d hotfix salar repr
 - 8d7d85a fix repr html
-- 0ad4555 add automatic soma
+- 0ad4555 add automatic sum
 - bf0f5c1 fix Christoffel naming and add Connection repr
 - 3cdd07b allow TensorSpace to infer dim from coords
 - 65243cd add equals

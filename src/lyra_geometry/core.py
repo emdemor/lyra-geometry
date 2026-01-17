@@ -46,7 +46,7 @@ def _resolve_autoparallel_parameter(parameter):
         if key in ("null", "lambda"):
             return sp.Symbol("lambda")
         return sp.Symbol(parameter)
-    raise TypeError("parameter deve ser string ou simbolo sympy.")
+    raise TypeError("parameter must be a string or a SymPy symbol.")
 
 
 class LyraConnectionStrategy(ConnectionStrategy):
@@ -190,13 +190,13 @@ class TensorSpace:
         if isinstance(coord, sp.Basic):
             if coord in self.coords:
                 return coord
-            raise ValueError("Coordenada desconhecida.")
+            raise ValueError("Unknown coordinate.")
         if isinstance(coord, str):
             for c in self.coords:
                 if str(c) == coord:
                     return c
-            raise ValueError("Coordenada desconhecida.")
-        raise TypeError("Coordenada deve ser int, simbolo ou string.")
+            raise ValueError("Unknown coordinate.")
+        raise TypeError("Coordinate must be int, symbol, or string.")
 
     def coord_index(self, names):
         if isinstance(names, str):
@@ -204,7 +204,7 @@ class TensorSpace:
         else:
             parts = list(names)
         if len(parts) != self.dim:
-            raise ValueError("Numero de indices deve ser igual a dim.")
+            raise ValueError("Number of indices must equal dim.")
         return tuple(CoordIndex(str(p), i) for i, p in enumerate(parts))
 
     def set_metric(self, metric, metric_inv=None):
@@ -297,7 +297,7 @@ class TensorSpace:
     def set_torsion(self, torsion_tensor):
         if isinstance(torsion_tensor, Tensor):
             if torsion_tensor.space is not self:
-                raise ValueError("Torsion tensor pertence a outro TensorSpace.")
+                raise ValueError("Torsion tensor belongs to a different TensorSpace.")
             self.torsion = torsion_tensor
         else:
             self.torsion = self.from_array(torsion_tensor, signature=(D, D, D))
@@ -306,7 +306,7 @@ class TensorSpace:
     def set_nonmetricity(self, nonmetricity_tensor):
         if isinstance(nonmetricity_tensor, Tensor):
             if nonmetricity_tensor.space is not self:
-                raise ValueError("Non-metricity tensor pertence a outro TensorSpace.")
+                raise ValueError("Non-metricity tensor belongs to a different TensorSpace.")
             self.nonmetricity = nonmetricity_tensor
         else:
             self.nonmetricity = self.from_array(nonmetricity_tensor, signature=(U, D, D))
@@ -430,25 +430,25 @@ class TensorSpace:
                 base._label_history = set(tensor._label_history)
         elif isinstance(tensor, Tensor):
             if tensor.space is not self:
-                raise ValueError("Tensor pertence a outro TensorSpace.")
+                raise ValueError("Tensor belongs to a different TensorSpace.")
             base = Tensor(tensor.components, self, signature=tensor.signature, name=name or tensor.name, label=label)
             if hasattr(tensor, "_labels"):
                 base._labels = list(tensor._labels)
             if hasattr(tensor, "_label_history"):
                 base._label_history = set(tensor._label_history)
         else:
-            raise TypeError("tensor deve ser Tensor ou IndexedTensor.")
+            raise TypeError("tensor must be Tensor or IndexedTensor.")
 
         if index is None:
             return base
 
         if not hasattr(base, "_labels"):
-            raise ValueError("Tensor nao possui rotulos para reordenar.")
+            raise ValueError("Tensor has no labels to reorder.")
 
         if not isinstance(index, (tuple, list)):
             index = (index,)
         if len(index) != base.rank:
-            raise ValueError("Numero de indices nao bate com o rank do tensor.")
+            raise ValueError("Number of indices does not match tensor rank.")
 
         target_labels = []
         target_sig = []
@@ -460,14 +460,14 @@ class TensorSpace:
                 target_labels.append(idx.label)
                 target_sig.append(D)
             else:
-                raise TypeError("Use apenas +a/-b (ou U(a)/D(b)) no index.")
+                raise TypeError("Use only +a/-b (or U(a)/D(b)) in index.")
 
         if any(lab is None or lab is NO_LABEL for lab in target_labels):
-            raise ValueError("Indices devem ter rotulos explicitos para reordenacao.")
+            raise ValueError("Indices must have explicit labels for reordering.")
 
         labels = list(base._labels)
         if set(target_labels) != set(labels):
-            raise ValueError("Reordenacao exige os mesmos rotulos de indices.")
+            raise ValueError("Reordering requires the same index labels.")
 
         perm = [labels.index(lab) for lab in target_labels]
         for pos, want in enumerate(target_sig):
@@ -475,7 +475,7 @@ class TensorSpace:
                 continue
             have = base.signature[perm[pos]]
             if have is not want:
-                raise ValueError("Variancia incompatível na reordenacao.")
+                raise ValueError("Incompatible variance in reordering.")
 
         reordered = sp.permutedims(base.components, perm)
         new_sig = tuple(base.signature[i] for i in perm)
@@ -499,21 +499,21 @@ class TensorSpace:
 
     def nabla(self, tensor, order=1, deriv_position="prepend"):
         """
-        Derivada covariante de Lyra:
+        Lyra covariant derivative:
         ∇_k T = (1/phi) ∂_k T + Σ Γ^{a_i}{}_{m k} T^{...m...} - Σ Γ^{m}{}_{b_j k} T_{...m...}
         """
         if not isinstance(order, int) or order < 1:
-            raise ValueError("order deve ser inteiro >= 1.")
+            raise ValueError("order must be an integer >= 1.")
         if self.connection is None:
-            raise ValueError("Defina a conexao (Gamma^a_{bc}) em TensorSpace.")
+            raise ValueError("Define the connection (Gamma^a_{bc}) in TensorSpace.")
         if isinstance(tensor, Tensor):
             if tensor.space is not self:
-                raise ValueError("Tensor pertence a outro TensorSpace.")
+                raise ValueError("Tensor belongs to a different TensorSpace.")
         else:
             try:
                 expr = sp.sympify(tensor)
             except (TypeError, ValueError) as exc:
-                raise TypeError("nabla aceita Tensor ou expressao sympy.") from exc
+                raise TypeError("nabla accepts a Tensor or a SymPy expression.") from exc
             tensor = Tensor(sp.Array(expr), self, signature=())
 
         dim = self.dim
@@ -534,7 +534,7 @@ class TensorSpace:
                 k = full_idx[0]
                 idx = full_idx[1:]
             else:
-                raise ValueError("deriv_position deve ser 'append' ou 'prepend'.")
+                raise ValueError("deriv_position must be 'append' or 'prepend'.")
 
             phi = self.phi.expr if isinstance(self.phi, Tensor) else self.phi
             base = (1 / phi) * sp.diff(T[idx], coords[k])
@@ -572,11 +572,11 @@ class TensorSpace:
 
     def divergence(self, tensor, position=0, deriv_position="prepend"):
         if not isinstance(tensor, Tensor):
-            raise TypeError("divergence exige Tensor.")
+            raise TypeError("divergence requires a Tensor.")
         if tensor.rank < 1:
-            raise ValueError("divergence exige tensor de rank >= 1.")
+            raise ValueError("divergence requires tensor rank >= 1.")
         if not isinstance(position, int) or not (0 <= position < tensor.rank):
-            raise ValueError("position deve apontar para um indice do tensor.")
+            raise ValueError("position must point to a tensor index.")
 
         nabla_t = self.nabla(tensor, order=1, deriv_position=deriv_position)
         if deriv_position == "prepend":
@@ -586,7 +586,7 @@ class TensorSpace:
             deriv_axis = nabla_t.rank - 1
             tensor_axis = position
         else:
-            raise ValueError("deriv_position deve ser 'append' ou 'prepend'.")
+            raise ValueError("deriv_position must be 'append' or 'prepend'.")
         return nabla_t.contract(deriv_axis, tensor_axis)
 
     def laplacian(self, tensor, deriv_position="prepend"):
@@ -595,19 +595,19 @@ class TensorSpace:
             return nabla2.contract(0, 1)
         if deriv_position == "append":
             return nabla2.contract(nabla2.rank - 2, nabla2.rank - 1)
-        raise ValueError("deriv_position deve ser 'append' ou 'prepend'.")
+        raise ValueError("deriv_position must be 'append' or 'prepend'.")
 
     def geodesic_equations(self, parameter="tau"):
         """
-        Calcula as equacoes geodesicas 4D para x^mu(s).
+        Compute the 4D geodesic equations for x^mu(s).
 
-        parameter aceita "timelike"/"tau" ou "null"/"lambda" (ou um Symbol).
-        Retorna uma lista com 4 equacoes sympy.Eq para x^0..x^3.
+        parameter accepts "timelike"/"tau" or "null"/"lambda" (or a Symbol).
+        Returns a list with 4 sympy.Eq equations for x^0..x^3.
         """
         if self.dim != 4:
-            raise ValueError("Geodesicas exigem dim=4.")
+            raise ValueError("Geodesics require dim=4.")
         if self.metric is None:
-            raise ValueError("Defina a metrica para calcular Christoffel.")
+            raise ValueError("Define the metric to compute Christoffel.")
         if self.christoffel2 is None:
             self.update(include=("metric", "christoffel"))
 
@@ -642,16 +642,16 @@ class TensorSpace:
 
     def autoparallel_equations(self, parameter="tau"):
         """
-        Calcula as equacoes de curvas autoparalelas 4D para x^mu(s).
+        Compute the 4D autoparallel curve equations for x^mu(s).
 
-        parameter aceita "timelike"/"tau" ou "null"/"lambda" (ou um Symbol).
-        Retorna uma lista com 4 equacoes sympy.Eq para x^0..x^3.
-        Usa a forma autoparalela de Lyra: d2x^a/ds^2 + (phi*Gamma^a_{mu nu} + nabla_nu phi*delta_mu^a) v^mu v^nu = 0.
+        parameter accepts "timelike"/"tau" or "null"/"lambda" (or a Symbol).
+        Returns a list with 4 sympy.Eq equations for x^0..x^3.
+        Uses the Lyra autoparallel form: d2x^a/ds^2 + (phi*Gamma^a_{mu nu} + nabla_nu phi*delta_mu^a) v^mu v^nu = 0.
         """
         if self.dim != 4:
-            raise ValueError("Geodesicas exigem dim=4.")
+            raise ValueError("Geodesics require dim=4.")
         if self.metric is None:
-            raise ValueError("Defina a metrica para calcular Christoffel.")
+            raise ValueError("Define the metric to compute Christoffel.")
         if self.christoffel2 is None:
             self.update(include=("metric", "christoffel"))
 
@@ -688,7 +688,7 @@ class TensorSpace:
         if self.scalar_curvature is not None:
             return self.scalar_curvature
         if self.ricci is None or self.metric_inv is None:
-            raise ValueError("Ricci tensor ou metrica nao definida.")
+            raise ValueError("Ricci tensor or metric not defined.")
         dim = self.dim
         scalar_R = sp.simplify(sum(self.metric_inv[a, b] * self.ricci.comp[a, b] for a in range(dim) for b in range(dim)))
         return self.scalar(scalar_R, name="R", label="R")
@@ -697,7 +697,7 @@ class TensorSpace:
         if self.riemann is None or self.metric is None or self.metric_inv is None:
             self.update(include=("riemann", "ricci", "einstein"))
         if self.riemann is None:
-            raise ValueError("Riemann tensor nao definido.")
+            raise ValueError("Riemann tensor not defined.")
         dim = self.dim
         R_down = self.riemann.as_signature((D, D, D, D))
         R_up = self.riemann.as_signature((U, U, U, U))
@@ -708,9 +708,9 @@ class TensorSpace:
 
     def euler_density(self, normalize=False):
         if self.dim != 2:
-            raise ValueError("Euler density implementada apenas para dim=2.")
+            raise ValueError("Euler density implemented only for dim=2.")
         if self.metric is None:
-            raise ValueError("Metrica nao definida para Euler density.")
+            raise ValueError("Metric not defined for Euler density.")
         scalar_R = self.ricci_scalar()
         density = sp.simplify(scalar_R.components[()] * sp.sqrt(self.detg))
         if normalize:
@@ -732,7 +732,7 @@ class TensorSpace:
 
     def contract(self, *indexed_tensors):
         if not indexed_tensors:
-            raise ValueError("Informe ao menos um tensor indexado.")
+            raise ValueError("Provide at least one indexed tensor.")
 
         tensors = [it if isinstance(it, IndexedTensor) else it.idx() for it in indexed_tensors]
         A = tensors[0].components
@@ -764,14 +764,14 @@ class TensorSpace:
                 raise ValueError(f"Indice {lab} aparece {len(occ)} vezes.")
             (p1, s1), (p2, s2) = occ
             if s1 is s2:
-                raise ValueError(f"Indice {lab} aparece com mesma variancia.")
+                raise ValueError(f"Index {lab} appears with the same variance.")
             pairs.append((p1, p2))
             to_remove.update([p1, p2])
             contracted_labels.add(lab)
 
         for lab in labels:
             if lab is not None and lab in history:
-                raise ValueError(f"Indice {lab} reutilizado apos contracao.")
+                raise ValueError(f"Index {lab} reused after contraction.")
 
         if pairs:
             A = sp.tensorcontraction(A, *pairs)
@@ -789,7 +789,7 @@ class TensorSpace:
             name, seq_labels = _parse_tensor_token(token)
             tensor = self.get(name)
             if tensor is None:
-                raise ValueError(f"Tensor '{name}' nao registrado.")
+                raise ValueError(f"Tensor '{name}' not registered.")
             up_full, down_full = _expand_indices(tensor.rank, seq_labels)
             indexed = tensor.idx(up=up_full, down=down_full)
             tensors.append(indexed)
@@ -800,7 +800,7 @@ class ConnectionTensor(Tensor):
     def as_signature(self, target_signature, simplify=False):
         target_signature = _validate_signature(target_signature, self.rank)
         if target_signature != self.signature:
-            raise ValueError("Conexao nao suporta subir/descer indices.")
+            raise ValueError("Connection does not support raising/lowering indices.")
         return self.components
 
 
@@ -833,13 +833,13 @@ class Connection:
 
     def __getitem__(self, idx):
         if self.components is None:
-            raise ValueError("Conexao nao definida.")
+            raise ValueError("Connection not defined.")
         if not isinstance(idx, tuple):
             idx = (idx,)
         if any(isinstance(item, (Index, UpIndex, DownIndex)) for item in idx):
             tensor = self._as_tensor()
             if tensor is None:
-                raise TypeError("Conexao nao tem TensorSpace associado; use indices inteiros.")
+                raise TypeError("Connection has no associated TensorSpace; use integer indices.")
             return tensor[idx]
         return self.components[idx]
 
@@ -872,7 +872,7 @@ class Manifold(TensorSpace):
 
 def autoparallel_equations(metric, coords, parameter="tau", connection_strategy=None):
     """
-    Construtor rapido para equacoes autoparalelas a partir de metrica e coordenadas.
+    Quick constructor for autoparallel equations from metric and coordinates.
     """
     space = TensorSpace(coords=coords, metric=metric, connection_strategy=connection_strategy)
     return space.autoparallel_equations(parameter=parameter)
@@ -880,7 +880,7 @@ def autoparallel_equations(metric, coords, parameter="tau", connection_strategy=
 
 def geodesic_equations(metric, coords, parameter="tau", connection_strategy=None):
     """
-    Construtor rapido para equacoes geodesicas a partir de metrica e coordenadas.
+    Quick constructor for geodesic equations from metric and coordinates.
     """
     space = TensorSpace(coords=coords, metric=metric, connection_strategy=connection_strategy)
     return space.geodesic_equations(parameter=parameter)

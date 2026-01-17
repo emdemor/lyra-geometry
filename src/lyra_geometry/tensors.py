@@ -67,7 +67,7 @@ d = D
 
 def _norm_sig(sig, rank):
     if len(sig) != rank:
-        raise ValueError(f"Assinatura tem tamanho {len(sig)} mas rank e {rank}.")
+        raise ValueError(f"Signature has length {len(sig)} but rank is {rank}.")
     out = []
     for s in sig:
         if s in (U, Up, "U", "u", "^", +1, True):
@@ -75,15 +75,15 @@ def _norm_sig(sig, rank):
         elif s in (D, Down, "D", "d", "_", -1, False):
             out.append(D)
         else:
-            raise ValueError(f"Elemento de assinatura invalido: {s!r}. Use U/D.")
+            raise ValueError(f"Invalid signature element: {s!r}. Use U/D.")
     return tuple(out)
 
 
 def _validate_signature(signature, rank):
     if not isinstance(signature, (tuple, list)):
-        raise TypeError("signature deve ser tupla/lista, ex.: (U,D,D).")
+        raise TypeError("signature must be a tuple/list, e.g. (U, D, D).")
     if len(signature) != rank:
-        raise ValueError(f"signature tem tamanho {len(signature)}, mas rank={rank}.")
+        raise ValueError(f"signature has length {len(signature)}, but rank={rank}.")
     return _norm_sig(signature, rank)
 
 
@@ -105,7 +105,7 @@ class Tensor:
 
     def _as_scalar(self):
         if self.rank != 0:
-            raise TypeError("Operacao escalar so e valida para tensores de rank 0.")
+            raise TypeError("Scalar operation is only valid for rank-0 tensors.")
         return sp.sympify(self.components[()])
 
     def fmt(self, expr=None):
@@ -160,10 +160,10 @@ class Tensor:
         if len(sig) == 1 and isinstance(sig[0], (tuple, list)):
             sig = tuple(sig[0])
         if sig and any(isinstance(s, Index) for s in sig):
-            raise TypeError("Use +a/-b para indices com variancia explicita.")
+            raise TypeError("Use +a/-b for indices with explicit variance.")
         if sig and all(isinstance(s, (UpIndex, DownIndex)) for s in sig):
             if len(sig) != self.rank:
-                raise ValueError("Numero de indices nao bate com o rank do tensor.")
+                raise ValueError("Number of indices does not match tensor rank.")
             up = [None] * self.rank
             down = [None] * self.rank
             for i, idx in enumerate(sig):
@@ -180,11 +180,11 @@ class Tensor:
             indices = (indices,)
         if any(isinstance(idx, (UpIndex, DownIndex, Index)) for idx in indices):
             if any(isinstance(idx, Index) for idx in indices):
-                raise TypeError("Use +a/-b para indices com variancia explicita.")
+                raise TypeError("Use +a/-b for indices with explicit variance.")
             if not all(isinstance(idx, (UpIndex, DownIndex)) for idx in indices):
-                raise TypeError("Use apenas +a/-b (ou U(a)/D(b)) para indexar o tensor.")
+                raise TypeError("Use only +a/-b (or U(a)/D(b)) to index the tensor.")
             if len(indices) != self.rank:
-                raise ValueError("Numero de indices nao bate com o rank do tensor.")
+                raise ValueError("Number of indices does not match tensor rank.")
             up = [None] * self.rank
             down = [None] * self.rank
             for i, idx in enumerate(indices):
@@ -202,28 +202,28 @@ class Tensor:
     def __add__(self, other):
         if isinstance(other, Tensor) and other.rank != self.rank:
             raise ValueError(
-                f"Soma exige tensores com o mesmo rank ({self.rank} vs {other.rank})."
+                f"Addition requires tensors with the same rank ({self.rank} vs {other.rank})."
             )
         if self.rank == 0:
             if isinstance(other, IndexedTensor) and other.tensor.rank != 0:
                 raise ValueError(
-                    f"Soma exige tensores com o mesmo rank ({self.rank} vs {other.tensor.rank})."
+                    f"Addition requires tensors with the same rank ({self.rank} vs {other.tensor.rank})."
                 )
             if isinstance(other, Tensor):
                 return self._as_scalar() + other._as_scalar()
             return self._as_scalar() + other
         if isinstance(other, Tensor):
             if other.space is not self.space:
-                raise ValueError("Tensores pertencem a TensorSpaces distintos.")
+                raise ValueError("Tensors belong to different TensorSpaces.")
             if other.signature != self.signature:
-                raise ValueError("Assinaturas diferentes; soma exige mesma assinatura.")
+                raise ValueError("Different signatures; addition requires the same signature.")
             labels = getattr(self, "_labels", None)
             other_labels = getattr(other, "_labels", None)
             if labels is not None or other_labels is not None:
                 if labels is None or other_labels is None:
-                    raise ValueError("Soma exige tensores com rotulos compatíveis.")
+                    raise ValueError("Addition requires tensors with compatible labels.")
                 if set(labels) != set(other_labels):
-                    raise ValueError("Soma exige tensores com os mesmos rotulos.")
+                    raise ValueError("Addition requires tensors with the same labels.")
                 if labels != other_labels:
                     perm = [other_labels.index(lab) for lab in labels]
                     other_components = sp.permutedims(other.components, perm)
@@ -243,28 +243,28 @@ class Tensor:
     def __sub__(self, other):
         if isinstance(other, Tensor) and other.rank != self.rank:
             raise ValueError(
-                f"Subtracao exige tensores com o mesmo rank ({self.rank} vs {other.rank})."
+                f"Subtraction requires tensors with the same rank ({self.rank} vs {other.rank})."
             )
         if self.rank == 0:
             if isinstance(other, IndexedTensor) and other.tensor.rank != 0:
                 raise ValueError(
-                    f"Subtracao exige tensores com o mesmo rank ({self.rank} vs {other.tensor.rank})."
+                    f"Subtraction requires tensors with the same rank ({self.rank} vs {other.tensor.rank})."
                 )
             if isinstance(other, Tensor):
                 return self._as_scalar() - other._as_scalar()
             return self._as_scalar() - other
         if isinstance(other, Tensor):
             if other.space is not self.space:
-                raise ValueError("Tensores pertencem a TensorSpaces distintos.")
+                raise ValueError("Tensors belong to different TensorSpaces.")
             if other.signature != self.signature:
-                raise ValueError("Assinaturas diferentes; subtracao exige mesma assinatura.")
+                raise ValueError("Different signatures; subtraction requires the same signature.")
             labels = getattr(self, "_labels", None)
             other_labels = getattr(other, "_labels", None)
             if labels is not None or other_labels is not None:
                 if labels is None or other_labels is None:
-                    raise ValueError("Subtracao exige tensores com rotulos compatíveis.")
+                    raise ValueError("Subtraction requires tensors with compatible labels.")
                 if set(labels) != set(other_labels):
-                    raise ValueError("Subtracao exige tensores com os mesmos rotulos.")
+                    raise ValueError("Subtraction requires tensors with the same labels.")
                 if labels != other_labels:
                     perm = [other_labels.index(lab) for lab in labels]
                     other_components = sp.permutedims(other.components, perm)
@@ -286,12 +286,12 @@ class Tensor:
             scalar = self._as_scalar()
             if isinstance(other, Tensor):
                 if other.space is not self.space:
-                    raise ValueError("Tensores pertencem a TensorSpaces distintos.")
+                    raise ValueError("Tensors belong to different TensorSpaces.")
                 scaled = scalar * other.components
                 return Tensor(scaled, other.space, signature=other.signature)
             if isinstance(other, IndexedTensor):
                 if other.tensor.space is not self.space:
-                    raise ValueError("Tensores pertencem a TensorSpaces distintos.")
+                    raise ValueError("Tensors belong to different TensorSpaces.")
                 scaled = scalar * other.components
                 tensor = Tensor(scaled, other.tensor.space, signature=other.signature)
                 indexed = IndexedTensor(tensor, tensor.components, tensor.signature, list(other.labels))
@@ -308,7 +308,7 @@ class Tensor:
                 scaled = other._as_scalar() * self.components
                 return Tensor(scaled, self.space, signature=self.signature)
             if other.space is not self.space:
-                raise ValueError("Tensores pertencem a TensorSpaces distintos.")
+                raise ValueError("Tensors belong to different TensorSpaces.")
             TP = sp.tensorproduct(self.components, other.components)
             new_sig = self.signature + other.signature
             return Tensor(TP, self.space, signature=new_sig)
@@ -331,7 +331,7 @@ class Tensor:
                 scaled = other._as_scalar() * self.components
                 return Tensor(scaled, self.space, signature=self.signature)
             if other.space is not self.space:
-                raise ValueError("Tensores pertencem a TensorSpaces distintos.")
+                raise ValueError("Tensors belong to different TensorSpaces.")
             TP = sp.tensorproduct(other.components, self.components)
             new_sig = other.signature + self.signature
             return Tensor(TP, self.space, signature=new_sig)
@@ -383,14 +383,14 @@ class Tensor:
 
     def _raise_at(self, A, pos):
         if self.space.metric_inv is None:
-            raise ValueError("Metric inverse nao definido para subir indices.")
+            raise ValueError("Metric inverse not defined for raising indices.")
         TP = sp.tensorproduct(self.space.metric_inv, A)
         C = sp.tensorcontraction(TP, (1, pos + 2))
         return self._move_front_axis_to(C, pos)
 
     def _lower_at(self, A, pos):
         if self.space.metric is None:
-            raise ValueError("Metric nao definida para descer indices.")
+            raise ValueError("Metric not defined for lowering indices.")
         TP = sp.tensorproduct(self.space.metric.components, A)
         C = sp.tensorcontraction(TP, (1, pos + 2))
         return self._move_front_axis_to(C, pos)
@@ -414,7 +414,7 @@ class Tensor:
                 A = self._lower_at(A, pos)
                 sig_cur[pos] = D
             else:
-                raise RuntimeError("Estado impossivel na conversao de assinatura.")
+                raise RuntimeError("Impossible state in signature conversion.")
 
         if simplify:
             A = sp.simplify(A)
@@ -426,11 +426,11 @@ class Tensor:
 
     def d(self, coord, deriv_position="append"):
         if isinstance(coord, UpIndex):
-            raise ValueError("Indice de derivada deve ser covariante.")
+            raise ValueError("Derivative index must be covariant.")
         if isinstance(coord, (Index, DownIndex)):
             label = coord.name if isinstance(coord, Index) else coord.label
             if label is None or label is NO_LABEL:
-                raise ValueError("Indice de derivada deve ter rotulo explicito.")
+                raise ValueError("Derivative index must have an explicit label.")
             coords = self.space.coords
             shape = self.components.shape
             dim = self.space.dim
@@ -449,7 +449,7 @@ class Tensor:
                         flat.append(sp.diff(self.components[idx], sym))
                 new_sig = (D,) + self.signature
             else:
-                raise ValueError("deriv_position deve ser 'append' ou 'prepend'.")
+                raise ValueError("deriv_position must be 'append' or 'prepend'.")
             target = sp.ImmutableDenseNDimArray(flat, new_shape)
             out = Tensor(target, self.space, signature=new_sig, name=None, label=self.label)
             out._labels = list(getattr(self, "_labels", [])) + [label] if deriv_position == "append" else [label] + list(getattr(self, "_labels", []))
@@ -465,9 +465,9 @@ class Tensor:
 
     def contract(self, pos1, pos2, use_metric=True):
         if pos1 == pos2:
-            raise ValueError("pos1 e pos2 devem ser indices distintos.")
+            raise ValueError("pos1 and pos2 must be distinct indices.")
         if not (0 <= pos1 < self.rank and 0 <= pos2 < self.rank):
-            raise IndexError("pos1/pos2 fora do rank do tensor.")
+            raise IndexError("pos1/pos2 out of tensor rank.")
 
         sig = list(self.signature)
         s1 = sig[pos1]
@@ -476,7 +476,7 @@ class Tensor:
 
         if s1 is s2:
             if not use_metric:
-                raise ValueError("Indices com mesma variancia exigem use_metric=True.")
+                raise ValueError("Indices with the same variance require use_metric=True.")
             if s1 is D:
                 A = self.as_signature(
                     tuple(U if i == pos2 else s for i, s in enumerate(sig))
@@ -498,12 +498,12 @@ class Tensor:
             up = [None] * rank
             down = [None] * rank
         elif up is None or down is None:
-            raise ValueError("Forneca up e down com o mesmo tamanho do rank.")
+            raise ValueError("Provide up and down with the same length as the rank.")
 
         up = list(up)
         down = list(down)
         if len(up) != rank or len(down) != rank:
-            raise ValueError("up/down devem ter tamanho igual ao rank do tensor.")
+            raise ValueError("up/down must have the same length as the tensor rank.")
 
         labels = []
         target_sig = []
@@ -511,7 +511,7 @@ class Tensor:
             up_i = _parse_label(up[i], self.space)
             down_i = _parse_label(down[i], self.space)
             if up_i is not None and down_i is not None:
-                raise ValueError("Indice nao pode ser up e down na mesma posicao.")
+                raise ValueError("Index cannot be up and down at the same position.")
             if up_i is None and down_i is None:
                 target_sig.append(self.signature[i])
                 labels.append(self.space._next_label())
@@ -552,10 +552,10 @@ class IndexedArray(Tensor):
         if len(sig) == 1 and isinstance(sig[0], (tuple, list)):
             sig = tuple(sig[0])
         if sig and any(isinstance(s, Index) for s in sig):
-            raise TypeError("Use +a/-b para indices com variancia explicita.")
+            raise TypeError("Use +a/-b for indices with explicit variance.")
         if sig and all(isinstance(s, (UpIndex, DownIndex)) for s in sig):
             if len(sig) != self.rank:
-                raise ValueError("Numero de indices nao bate com o rank do tensor.")
+                raise ValueError("Number of indices does not match tensor rank.")
             up = [None] * self.rank
             down = [None] * self.rank
             for i, idx in enumerate(sig):
@@ -573,12 +573,12 @@ class IndexedArray(Tensor):
             up = [None] * rank
             down = [None] * rank
         elif up is None or down is None:
-            raise ValueError("Forneca up e down com o mesmo tamanho do rank.")
+            raise ValueError("Provide up and down with the same length as the rank.")
 
         up = list(up)
         down = list(down)
         if len(up) != rank or len(down) != rank:
-            raise ValueError("up/down devem ter tamanho igual ao rank do tensor.")
+            raise ValueError("up/down must have the same length as the tensor rank.")
 
         labels = []
         target_sig = []
@@ -586,7 +586,7 @@ class IndexedArray(Tensor):
             up_i = _parse_label(up[i], self.space)
             down_i = _parse_label(down[i], self.space)
             if up_i is not None and down_i is not None:
-                raise ValueError("Indice nao pode ser up e down na mesma posicao.")
+                raise ValueError("Index cannot be up and down at the same position.")
             if up_i is None and down_i is None:
                 target_sig.append(self.signature[i])
                 labels.append(self.space._next_label())
@@ -618,13 +618,13 @@ class IndexedTensor:
     def d(self, coord, deriv_position="append"):
         labels = list(self.labels)
         if isinstance(coord, UpIndex):
-            raise ValueError("Indice de derivada deve ser covariante.")
+            raise ValueError("Derivative index must be covariant.")
         if isinstance(coord, Index):
-            raise ValueError("Use +a/-b para indices com variancia explicita.")
+            raise ValueError("Use +a/-b for indices with explicit variance.")
         if isinstance(coord, DownIndex):
             lab = coord.label
             if lab is None or lab is NO_LABEL:
-                raise ValueError("Indice de derivada deve ter rotulo explicito.")
+                raise ValueError("Derivative index must have an explicit label.")
             coords = self.tensor.space.coords
             shape = self.components.shape
             dim = self.tensor.space.dim
@@ -645,7 +645,7 @@ class IndexedTensor:
                 new_sig = (D,) + self.signature
                 new_labels = [lab] + labels
             else:
-                raise ValueError("deriv_position deve ser 'append' ou 'prepend'.")
+                raise ValueError("deriv_position must be 'append' or 'prepend'.")
             target = sp.ImmutableDenseNDimArray(flat, new_shape)
             tensor = Tensor(target, self.tensor.space, signature=new_sig)
             return IndexedTensor(tensor, tensor.components, tensor.signature, new_labels)
@@ -700,15 +700,15 @@ class IndexedTensor:
         else:
             return NotImplemented
         if other_space is not self.tensor.space:
-            raise ValueError("Tensores pertencem a TensorSpaces distintos.")
+            raise ValueError("Tensors belong to different TensorSpaces.")
         if other_sig != self.signature:
-            raise ValueError("Assinaturas diferentes; igualdade exige mesma assinatura.")
+            raise ValueError("Different signatures; equality requires the same signature.")
         return self.components == other_components
 
     def __call__(self, *idx):
         rank = len(self.signature)
         if len(idx) > rank:
-            raise ValueError("Numero de indices nao bate com o rank do tensor.")
+            raise ValueError("Number of indices does not match tensor rank.")
         if len(idx) == rank:
             return self.components[idx]
         slicer = idx + (slice(None),) * (rank - len(idx))
@@ -720,17 +720,17 @@ class IndexedTensor:
     def _resolve_position(self, idx):
         if isinstance(idx, int):
             if not (0 <= idx < len(self.signature)):
-                raise IndexError("Indice fora do rank do tensor.")
+                raise IndexError("Index out of tensor rank.")
             return idx
         if isinstance(idx, (UpIndex, DownIndex)):
             label = idx.label
         elif isinstance(idx, Index):
-            raise ValueError("Use +a/-b para indices com variancia explicita.")
+            raise ValueError("Use +a/-b for indices with explicit variance.")
         else:
-            raise ValueError("Use +a/-b para indices com variancia explicita.")
+            raise ValueError("Use +a/-b for indices with explicit variance.")
         matches = [i for i, lab in enumerate(self.labels) if lab == label]
         if len(matches) != 1:
-            raise ValueError(f"Indice {label!r} nao encontrado ou duplicado.")
+            raise ValueError(f"Index {label!r} not found or duplicated.")
         return matches[0]
 
     def _swap_axes(self, pos1, pos2):
@@ -742,9 +742,9 @@ class IndexedTensor:
         pos1 = self._resolve_position(idx1)
         pos2 = self._resolve_position(idx2)
         if pos1 == pos2:
-            raise ValueError("Indices devem ser distintos.")
+            raise ValueError("Indices must be distinct.")
         if self.signature[pos1] is not self.signature[pos2]:
-            raise ValueError("Indices com variancia diferente nao podem ser simetrizados.")
+            raise ValueError("Indices with different variance cannot be symmetrized.")
         swapped = self._swap_axes(pos1, pos2)
         arr = sp.Rational(1, 2) * (self.components + swapped)
         tensor = Tensor(arr, self.tensor.space, signature=self.signature)
@@ -754,9 +754,9 @@ class IndexedTensor:
         pos1 = self._resolve_position(idx1)
         pos2 = self._resolve_position(idx2)
         if pos1 == pos2:
-            raise ValueError("Indices devem ser distintos.")
+            raise ValueError("Indices must be distinct.")
         if self.signature[pos1] is not self.signature[pos2]:
-            raise ValueError("Indices com variancia diferente nao podem ser antissimetrizados.")
+            raise ValueError("Indices with different variance cannot be antisymmetrized.")
         swapped = self._swap_axes(pos1, pos2)
         arr = sp.Rational(1, 2) * (self.components - swapped)
         tensor = Tensor(arr, self.tensor.space, signature=self.signature)
@@ -780,15 +780,15 @@ class IndexedTensor:
         if isinstance(other, IndexedTensor):
             space = self.tensor.space
             if other.tensor.space is not space:
-                raise ValueError("Tensores pertencem a TensorSpaces distintos.")
+                raise ValueError("Tensors belong to different TensorSpaces.")
             history = set(getattr(self, "_label_history", set()))
             other_history = set(getattr(other, "_label_history", set()))
             reused = history & set(other.labels)
             if reused:
-                raise ValueError(f"Indice {sorted(reused)[0]} reutilizado apos contracao.")
+                raise ValueError(f"Index {sorted(reused)[0]} reused after contraction.")
             reused = other_history & set(self.labels)
             if reused:
-                raise ValueError(f"Indice {sorted(reused)[0]} reutilizado apos contracao.")
+                raise ValueError(f"Index {sorted(reused)[0]} reused after contraction.")
             if set(self.labels) & set(other.labels):
                 return space.contract(self, other)
             TP = sp.tensorproduct(self.components, other.components)
@@ -801,7 +801,7 @@ class IndexedTensor:
         if isinstance(other, Tensor) and hasattr(other, "_labels"):
             space = self.tensor.space
             if other.space is not space:
-                raise ValueError("Tensores pertencem a TensorSpaces distintos.")
+                raise ValueError("Tensors belong to different TensorSpaces.")
             indexed = IndexedTensor(other, other.components, other.signature, list(other._labels))
             indexed._label_history = set(getattr(other, "_label_history", set()))
             return space.contract(self, indexed)
@@ -825,15 +825,15 @@ class IndexedTensor:
         if isinstance(other, IndexedTensor):
             space = other.tensor.space
             if self.tensor.space is not space:
-                raise ValueError("Tensores pertencem a TensorSpaces distintos.")
+                raise ValueError("Tensors belong to different TensorSpaces.")
             history = set(getattr(self, "_label_history", set()))
             other_history = set(getattr(other, "_label_history", set()))
             reused = history & set(other.labels)
             if reused:
-                raise ValueError(f"Indice {sorted(reused)[0]} reutilizado apos contracao.")
+                raise ValueError(f"Index {sorted(reused)[0]} reused after contraction.")
             reused = other_history & set(self.labels)
             if reused:
-                raise ValueError(f"Indice {sorted(reused)[0]} reutilizado apos contracao.")
+                raise ValueError(f"Index {sorted(reused)[0]} reused after contraction.")
             if set(self.labels) & set(other.labels):
                 return space.contract(other, self)
             TP = sp.tensorproduct(other.components, self.components)
@@ -870,19 +870,19 @@ class IndexedTensor:
             return NotImplemented
         if len(other_sig) != len(self.signature):
             raise ValueError(
-                f"Soma exige tensores com o mesmo rank ({len(self.signature)} vs {len(other_sig)})."
+                f"Addition requires tensors with the same rank ({len(self.signature)} vs {len(other_sig)})."
             )
         if other_space is not self.tensor.space:
-            raise ValueError("Tensores pertencem a TensorSpaces distintos.")
+            raise ValueError("Tensors belong to different TensorSpaces.")
         labels = list(self.labels)
         if other_labels:
             if set(other_labels) != set(labels):
-                raise ValueError("Soma exige os mesmos rotulos.")
+                raise ValueError("Addition requires the same labels.")
             perm = [other_labels.index(lab) for lab in labels]
             other_components = sp.permutedims(other_components, perm)
             other_sig = tuple(other_sig[i] for i in perm)
         if other_sig != self.signature:
-            raise ValueError("Assinaturas diferentes; soma exige mesma assinatura.")
+            raise ValueError("Different signatures; addition requires the same signature.")
         arr = self.components + other_components
         tensor = Tensor(arr, self.tensor.space, signature=self.signature)
         return IndexedTensor(tensor, tensor.components, tensor.signature, list(self.labels))
@@ -905,19 +905,19 @@ class IndexedTensor:
             return NotImplemented
         if len(other_sig) != len(self.signature):
             raise ValueError(
-                f"Subtracao exige tensores com o mesmo rank ({len(self.signature)} vs {len(other_sig)})."
+                f"Subtraction requires tensors with the same rank ({len(self.signature)} vs {len(other_sig)})."
             )
         if other_space is not self.tensor.space:
-            raise ValueError("Tensores pertencem a TensorSpaces distintos.")
+            raise ValueError("Tensors belong to different TensorSpaces.")
         labels = list(self.labels)
         if other_labels:
             if set(other_labels) != set(labels):
-                raise ValueError("Subtracao exige os mesmos rotulos.")
+                raise ValueError("Subtraction requires the same labels.")
             perm = [other_labels.index(lab) for lab in labels]
             other_components = sp.permutedims(other_components, perm)
             other_sig = tuple(other_sig[i] for i in perm)
         if other_sig != self.signature:
-            raise ValueError("Assinaturas diferentes; subtracao exige mesma assinatura.")
+            raise ValueError("Different signatures; subtraction requires the same signature.")
         arr = self.components - other_components
         tensor = Tensor(arr, self.tensor.space, signature=self.signature)
         return IndexedTensor(tensor, tensor.components, tensor.signature, list(self.labels))
@@ -950,7 +950,7 @@ class IndexedArrayItem(IndexedTensor):
     def __eq__(self, other):
         if isinstance(other, IndexedTensor):
             if other.tensor.space is not self.tensor.space:
-                raise ValueError("Tensores pertencem a TensorSpaces distintos.")
+                raise ValueError("Tensors belong to different TensorSpaces.")
             return self.components == other.components
         return NotImplemented
 
@@ -1019,7 +1019,7 @@ def _parse_label(label, space):
 def _complete_indices_right(labels, rank):
     labels = list(labels)
     if len(labels) > rank:
-        raise ValueError("Numero de indices nao bate com o rank do tensor.")
+        raise ValueError("Number of indices does not match tensor rank.")
     labels.extend([None] * (rank - len(labels)))
     return labels
 
@@ -1043,7 +1043,7 @@ def _parse_tensor_token(token):
                 while i < len(token) and token[i].isalnum():
                     i += 1
                 if start == i:
-                    raise ValueError("Esperado indice apos '^' ou '_'.")
+                    raise ValueError("Expected an index after '^' or '_'.")
                 labels = [token[start:i]]
             for lab in labels:
                 seq.append((var, lab))
@@ -1057,7 +1057,7 @@ def _expand_indices(rank, up_labels=None, down_labels=None):
         if all(isinstance(item, tuple) and len(item) == 2 for item in up_labels):
             seq = list(up_labels)
             if len(seq) != rank:
-                raise ValueError("Numero de indices nao bate com o rank do tensor.")
+                raise ValueError("Number of indices does not match tensor rank.")
             up_full = [None] * rank
             down_full = [None] * rank
             for i, (var, lab) in enumerate(seq):
@@ -1066,12 +1066,12 @@ def _expand_indices(rank, up_labels=None, down_labels=None):
                 elif var == "_":
                     down_full[i] = lab
                 else:
-                    raise ValueError(f"Variancia invalida: {var!r}. Use '^' ou '_'.")
+                    raise ValueError(f"Invalid variance: {var!r}. Use '^' or '_'.")
             return up_full, down_full
     up_labels = [] if up_labels is None else list(up_labels)
     down_labels = [] if down_labels is None else list(down_labels)
     if len(up_labels) + len(down_labels) != rank:
-        raise ValueError("Numero de indices nao bate com o rank do tensor.")
+        raise ValueError("Number of indices does not match tensor rank.")
     up_full = [None] * rank
     down_full = [None] * rank
     for i, lab in enumerate(up_labels):
@@ -1083,7 +1083,7 @@ def _expand_indices(rank, up_labels=None, down_labels=None):
 
 def _read_block(s, i):
     if s[i] != "{":
-        raise ValueError("Esperado '{' na expressao de indices.")
+        raise ValueError("Expected '{' in index expression.")
     depth = 0
     start = i + 1
     i += 1
@@ -1095,7 +1095,7 @@ def _read_block(s, i):
                 return s[start:i], i + 1
             depth -= 1
         i += 1
-    raise ValueError("Bloco de indices nao fechado.")
+    raise ValueError("Index block not closed.")
 
 
 def _split_indices(block):

@@ -40,7 +40,7 @@ def greek(name):
     }
     key = str(name).strip().lower()
     if key not in mapping:
-        raise ValueError(f"Letra grega desconhecida: {name!r}.")
+        raise ValueError(f"Unknown greek letter: {name!r}.")
     return mapping[key]
 
 
