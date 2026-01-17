@@ -187,7 +187,7 @@ st.detg       # determinant of the metric
 
 ## Indices, raising/lowering, and components
 
-Use index labels and variance markers to access components:
+Use index labels with explicit variance markers to access components:
 
 ```python
 a, b, c = st.index("a b c")
@@ -197,6 +197,8 @@ st.g[+a, +b]  # g^ab
 
 st.g[-a, -b](0, 0)  # component access
 ```
+
+Bare indices (like `t[a, b]`) are not accepted; always use `+a`/`-a`.
 
 ## Generic tensors and contraction
 
