@@ -26,6 +26,9 @@ from .core import (
     d,
     example_indexing,
     greek,
+    gradient,
+    divergence,
+    laplacian,
     u,
 )
 
@@ -55,6 +58,9 @@ __all__ = [
     "d",
     "example_indexing",
     "greek",
+    "gradient",
+    "divergence",
+    "laplacian",
     "u",
 ]
 

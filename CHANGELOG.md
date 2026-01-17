@@ -8,7 +8,7 @@
 - If notebooks or formulas changed, add a minimal reproduction snippet.
 
 ## Unreleased
-_empty_
+- add gradient/divergence/laplacian helpers with notebook example
 
 ## v0.1.12
 - expand README with project scope and comparisons

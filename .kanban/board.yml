@@ -1,6 +1,5 @@
 lanes:
   Ready:
-    - 0007 - [Feature] Adicionar operadores diferenciais em campos tensoriais
     - 0010 - [Feature] Adicionar invariantes de curvatura e classes caracteristicas
     - 0011 - [Feature] Integrar com sympy.diffgeom e sympy.tensor
   Doing: []

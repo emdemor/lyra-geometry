@@ -580,6 +580,36 @@ class TensorSpace:
             return result
         return self.nabla(result, order=order - 1, deriv_position=deriv_position)
 
+    def gradient(self, tensor, deriv_position="prepend"):
+        return self.nabla(tensor, order=1, deriv_position=deriv_position)
+
+    def divergence(self, tensor, position=0, deriv_position="prepend"):
+        if not isinstance(tensor, Tensor):
+            raise TypeError("divergence exige Tensor.")
+        if tensor.rank < 1:
+            raise ValueError("divergence exige tensor de rank >= 1.")
+        if not isinstance(position, int) or not (0 <= position < tensor.rank):
+            raise ValueError("position deve apontar para um indice do tensor.")
+
+        nabla_t = self.nabla(tensor, order=1, deriv_position=deriv_position)
+        if deriv_position == "prepend":
+            deriv_axis = 0
+            tensor_axis = 1 + position
+        elif deriv_position == "append":
+            deriv_axis = nabla_t.rank - 1
+            tensor_axis = position
+        else:
+            raise ValueError("deriv_position deve ser 'append' ou 'prepend'.")
+        return nabla_t.contract(deriv_axis, tensor_axis)
+
+    def laplacian(self, tensor, deriv_position="prepend"):
+        nabla2 = self.nabla(tensor, order=2, deriv_position=deriv_position)
+        if deriv_position == "prepend":
+            return nabla2.contract(0, 1)
+        if deriv_position == "append":
+            return nabla2.contract(nabla2.rank - 2, nabla2.rank - 1)
+        raise ValueError("deriv_position deve ser 'append' ou 'prepend'.")
+
     def index(self, names):
         if isinstance(names, str):
             parts = [p for p in names.replace(",", " ").split() if p]
@@ -1627,6 +1657,29 @@ def _split_indices(block):
         else:
             out.append(part)
     return out
+
+
+def _resolve_space(space, tensor):
+    if space is not None:
+        return space
+    if isinstance(tensor, Tensor):
+        return tensor.space
+    raise ValueError("Informe space para expressao sem Tensor associado.")
+
+
+def gradient(tensor, space=None, deriv_position="prepend"):
+    space = _resolve_space(space, tensor)
+    return space.gradient(tensor, deriv_position=deriv_position)
+
+
+def divergence(tensor, space=None, position=0, deriv_position="prepend"):
+    space = _resolve_space(space, tensor)
+    return space.divergence(tensor, position=position, deriv_position=deriv_position)
+
+
+def laplacian(tensor, space=None, deriv_position="prepend"):
+    space = _resolve_space(space, tensor)
+    return space.laplacian(tensor, deriv_position=deriv_position)
 
 
 class SpaceTime(TensorSpace):
