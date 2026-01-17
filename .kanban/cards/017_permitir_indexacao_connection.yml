@@ -1,0 +1,33 @@
+id: 17
+title: Permitir indexacao com variancia em Connection
+type: Bug
+priority: P2
+service_class: Standard
+status: Done
+owner: codex
+
+context: |
+  A indexacao direta de Connection (space.gamma) com indices do tipo Index/UpIndex/DownIndex
+  atualmente falha, porque Connection.__getitem__ repassa os objetos de indice direto para
+  o SymPy Array. Isso gera TypeError ao tentar comparar Index com Integer, impedindo o uso
+  de chamadas como gamma[+a, -b, -c] ou de erro amigavel para gamma[a, b, c].
+  Precisamos permitir o uso de indices com variancia explicita na Connection (delegando
+  para um ConnectionTensor associado ao TensorSpace) e manter o erro explicito para
+  indices sem variancia.
+
+acceptance_criteria:
+  - space.gamma[+a, -b, -c] retorna um IndexedTensor (ou Tensor resultante da contracao) sem TypeError.
+  - space.gamma[a, b, c] levanta TypeError orientando o uso de +a/-b.
+  - Existe teste unitario cobrindo a indexacao de Connection com indices explicitos.
+
+dependencies: []
+
+blockers: []
+
+artifacts:
+  - tests/unit/test_connection.py
+
+technical:
+  estimate: S
+  risk: Low
+  tags: [Tensor, Connection, Index]

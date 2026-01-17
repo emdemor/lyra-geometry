@@ -10,6 +10,7 @@
 ## Unreleased
 - add Lyra autoparallel equations helper for 4D metrics with tau/lambda parameter choice
 - fix: allow scalar multiplication of Connection objects (sympy scalars and scalar tensors)
+- fix: support explicit index variance when indexing Connection (gamma)
 
 ## v0.1.15
 - refactor module layout into core/tensors/diff_ops/invariants/utils with compatibility re-exports

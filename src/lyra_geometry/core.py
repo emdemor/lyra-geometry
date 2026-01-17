@@ -165,7 +165,9 @@ class TensorSpace:
         else:
             self.connection_strategy = connection_strategy or LyraConnectionStrategy()
         self.curvature_strategy = curvature_strategy or LyraCurvatureStrategy()
-        self.gamma = Connection(connection) if connection is not None else Connection(None)
+        self.gamma = (
+            Connection(connection, space=self) if connection is not None else Connection(None, space=self)
+        )
         self.scale = self.scalar(1, name="phi", label="phi")
         self.phi = self.scale
         self.torsion = self.zeros((D, D, D), name="tau", label="tau")
@@ -248,7 +250,7 @@ class TensorSpace:
 
     def set_connection(self, connection):
         self.connection_strategy = FixedConnectionStrategy(connection)
-        self.gamma = Connection(connection)
+        self.gamma = Connection(connection, space=self)
         if connection is not None:
             self._connection_tensor = ConnectionTensor(sp.Array(connection), self, signature=(U, D, D), name="connection")
         else:
@@ -318,11 +320,11 @@ class TensorSpace:
 
     def _update_connection(self):
         if self.connection_strategy is None:
-            self.gamma = Connection(None)
+            self.gamma = Connection(None, space=self)
             self._connection_tensor = None
             return
         Gamma = self.connection_strategy.build(self)
-        self.gamma = Connection(Gamma) if Gamma is not None else Connection(None)
+        self.gamma = Connection(Gamma, space=self) if Gamma is not None else Connection(None, space=self)
         if Gamma is not None:
             self._connection_tensor = ConnectionTensor(sp.Array(Gamma), self, signature=(U, D, D), name="connection")
         else:
@@ -726,8 +728,21 @@ class ConnectionTensor(Tensor):
 
 
 class Connection:
-    def __init__(self, components):
+    def __init__(self, components, space=None):
         self.components = sp.Array(components) if components is not None else None
+        self.space = space
+        self._tensor = None
+
+    def _as_tensor(self):
+        if self.components is None or self.space is None:
+            return None
+        if self.space.connection is not None:
+            return self.space.connection
+        if self._tensor is None:
+            self._tensor = ConnectionTensor(
+                self.components, self.space, signature=(U, D, D), name="connection"
+            )
+        return self._tensor
 
     def _repr_latex_(self):
         if self.components is None:
@@ -742,6 +757,13 @@ class Connection:
     def __getitem__(self, idx):
         if self.components is None:
             raise ValueError("Conexao nao definida.")
+        if not isinstance(idx, tuple):
+            idx = (idx,)
+        if any(isinstance(item, (Index, UpIndex, DownIndex)) for item in idx):
+            tensor = self._as_tensor()
+            if tensor is None:
+                raise TypeError("Conexao nao tem TensorSpace associado; use indices inteiros.")
+            return tensor[idx]
         return self.components[idx]
 
     def __mul__(self, other):
@@ -756,8 +778,8 @@ class Connection:
         else:
             return NotImplemented
         if self.components is None:
-            return Connection(None)
-        return Connection(scalar * self.components)
+            return Connection(None, space=self.space)
+        return Connection(scalar * self.components, space=self.space)
 
     def __rmul__(self, other):
         return self.__mul__(other)
