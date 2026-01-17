@@ -1,0 +1,26 @@
+id: 22
+title: Add tests using real GR solution examples
+type: TechDebt
+priority: P2
+service_class: Standard
+status: Backlog
+owner: agent-codex
+
+context: |
+  Current tests rely mostly on synthetic or minimal examples. We need coverage
+  using real general relativity solutions to validate tensor operations and
+  curvature helpers against known results.
+
+acceptance_criteria:
+  - Tests include at least two GR solutions with known analytic results (e.g., Schwarzschild, FLRW, de Sitter)
+  - Each new test asserts a verifiable invariant or equation outcome (e.g., R=0 for vacuum, Ricci scalar value)
+  - Tests pass with `python -m pytest`
+
+dependencies: []
+blockers: []
+artifacts: []
+
+technical:
+  estimate: M
+  risk: Medium
+  tags: [Tests, GR, Validation]
