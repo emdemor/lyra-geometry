@@ -610,6 +610,41 @@ class TensorSpace:
             return nabla2.contract(nabla2.rank - 2, nabla2.rank - 1)
         raise ValueError("deriv_position deve ser 'append' ou 'prepend'.")
 
+    def ricci_scalar(self):
+        if self.ricci is None or self.metric_inv is None or self.scalar_curvature is None:
+            self.update(include=("riemann", "ricci", "einstein"))
+        if self.scalar_curvature is not None:
+            return self.scalar_curvature
+        if self.ricci is None or self.metric_inv is None:
+            raise ValueError("Ricci tensor ou metrica nao definida.")
+        dim = self.dim
+        scalar_R = sp.simplify(sum(self.metric_inv[a, b] * self.ricci.comp[a, b] for a in range(dim) for b in range(dim)))
+        return self.scalar(scalar_R, name="R", label="R")
+
+    def kretschmann_scalar(self):
+        if self.riemann is None or self.metric is None or self.metric_inv is None:
+            self.update(include=("riemann", "ricci", "einstein"))
+        if self.riemann is None:
+            raise ValueError("Riemann tensor nao definido.")
+        dim = self.dim
+        R_down = self.riemann.as_signature((D, D, D, D))
+        R_up = self.riemann.as_signature((U, U, U, U))
+        total = 0
+        for a, b, c, d in itertools.product(range(dim), repeat=4):
+            total += R_down[a, b, c, d] * R_up[a, b, c, d]
+        return self.scalar(sp.simplify(total), name="K", label="K")
+
+    def euler_density(self, normalize=False):
+        if self.dim != 2:
+            raise ValueError("Euler density implementada apenas para dim=2.")
+        if self.metric is None:
+            raise ValueError("Metrica nao definida para Euler density.")
+        scalar_R = self.ricci_scalar()
+        density = sp.simplify(scalar_R.components[()] * sp.sqrt(self.detg))
+        if normalize:
+            density = sp.simplify(density / (4 * sp.pi))
+        return self.scalar(density, name="Euler", label="Euler")
+
     def index(self, names):
         if isinstance(names, str):
             parts = [p for p in names.replace(",", " ").split() if p]
@@ -1667,6 +1702,16 @@ def _resolve_space(space, tensor):
     raise ValueError("Informe space para expressao sem Tensor associado.")
 
 
+def _resolve_space_invariant(space, tensor):
+    if space is not None:
+        return space
+    if isinstance(tensor, TensorSpace):
+        return tensor
+    if isinstance(tensor, Tensor):
+        return tensor.space
+    raise ValueError("Informe space para calcular invariantes.")
+
+
 def gradient(tensor, space=None, deriv_position="prepend"):
     space = _resolve_space(space, tensor)
     return space.gradient(tensor, deriv_position=deriv_position)
@@ -1680,6 +1725,21 @@ def divergence(tensor, space=None, position=0, deriv_position="prepend"):
 def laplacian(tensor, space=None, deriv_position="prepend"):
     space = _resolve_space(space, tensor)
     return space.laplacian(tensor, deriv_position=deriv_position)
+
+
+def ricci_scalar(tensor=None, space=None):
+    space = _resolve_space_invariant(space, tensor)
+    return space.ricci_scalar()
+
+
+def kretschmann_scalar(tensor=None, space=None):
+    space = _resolve_space_invariant(space, tensor)
+    return space.kretschmann_scalar()
+
+
+def euler_density(tensor=None, space=None, normalize=False):
+    space = _resolve_space_invariant(space, tensor)
+    return space.euler_density(normalize=normalize)
 
 
 class SpaceTime(TensorSpace):

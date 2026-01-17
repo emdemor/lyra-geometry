@@ -25,10 +25,13 @@ from .core import (
     U,
     d,
     example_indexing,
+    euler_density,
     greek,
     gradient,
     divergence,
+    kretschmann_scalar,
     laplacian,
+    ricci_scalar,
     u,
 )
 
@@ -57,10 +60,13 @@ __all__ = [
     "U",
     "d",
     "example_indexing",
+    "euler_density",
     "greek",
     "gradient",
     "divergence",
+    "kretschmann_scalar",
     "laplacian",
+    "ricci_scalar",
     "u",
 ]
 

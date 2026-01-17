@@ -8,6 +8,8 @@
 - If notebooks or formulas changed, add a minimal reproduction snippet.
 
 ## Unreleased
+- add curvature invariants helpers (ricci_scalar, kretschmann_scalar) and Euler density
+- add unit tests covering invariants on flat metric
 
 ## v0.1.13
 - add gradient/divergence/laplacian helpers with notebook example
