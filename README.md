@@ -84,6 +84,17 @@ Helpers:
   mu, nu = pl.greek("mu nu")
   ```
 
+## Module organization
+
+The public API continues to be re-exported from `lyra_geometry`, but the
+implementation is organized by responsibility:
+
+- `lyra_geometry.core`: tensor spaces, connections, curvature strategies.
+- `lyra_geometry.tensors`: tensors, indices, and low-level tensor helpers.
+- `lyra_geometry.diff_ops`: gradient/divergence/laplacian helpers.
+- `lyra_geometry.invariants`: Ricci/Kretschmann/Euler invariants.
+- `lyra_geometry.utils`: small utilities like `greek` and `example_indexing`.
+
 ## What `lyra-geometry` is (and what it is not)
 
 ### What it is
