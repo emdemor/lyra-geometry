@@ -63,13 +63,13 @@ class LyraConnectionStrategy(ConnectionStrategy):
         tau = space.torsion
         chris = space.christoffel2
 
-        def connection_element(b, n, l):
+        def connection_element(b, l, n):
             return (
-                1 / phi * chris[b, n, l]
-                - sp.Rational(1, 2) * M(U, D, D)[b, n, l]
+                1 / phi * chris[b, l, n]
+                - sp.Rational(1, 2) * M(U, D, D)[b, l, n]
                 + 1 / (phi) * (
-                    sp.KroneckerDelta(b, l) * 1 / phi * sp.diff(phi, coords[n])
-                    - sum(1 / phi * g[n, l] * g_inv[b, s] * sp.diff(phi, coords[s]) for s in range(dim))
+                    sp.KroneckerDelta(b, n) * 1 / phi * sp.diff(phi, coords[l])
+                    - sum((1 / phi) * g[l, n] * g_inv[b, s] * sp.diff(phi, coords[s]) for s in range(dim))
                 )
                 + sp.Rational(1, 2) * sum(
                     g_inv[m, b] * (
