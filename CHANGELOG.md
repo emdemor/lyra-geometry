@@ -8,6 +8,8 @@
 - If notebooks or formulas changed, add a minimal reproduction snippet.
 
 ## Unreleased
+- tests: add GR solution invariants for Schwarzschild and de Sitter
+- tests: add spherical symmetry checks for connection, curvature, Ricci, Einstein, and geodesics
 
 ## v0.1.18
 - docs: translate user-facing strings and notebook outputs to English

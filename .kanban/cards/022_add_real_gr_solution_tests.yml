@@ -3,7 +3,7 @@ title: Add tests using real GR solution examples
 type: TechDebt
 priority: P2
 service_class: Standard
-status: Backlog
+status: Done
 owner: agent-codex
 
 context: |
