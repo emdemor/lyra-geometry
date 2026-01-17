@@ -8,7 +8,10 @@
 - If notebooks or formulas changed, add a minimal reproduction snippet.
 
 ## Unreleased
+
+## v0.1.13
 - add gradient/divergence/laplacian helpers with notebook example
+- tests: `python -m pytest` (36 passed in 10.95s)
 
 ## v0.1.12
 - expand README with project scope and comparisons
