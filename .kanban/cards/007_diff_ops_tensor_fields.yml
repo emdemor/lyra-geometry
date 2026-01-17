@@ -13,6 +13,7 @@ context: |
 acceptance_criteria:
   - Existem funcoes publicas gradient, divergence e laplacian
   - As funcoes aceitam ao menos campos escalares e vetoriais
+  - Existem exemplos do notebook examples.ipynb
   - Ha testes cobrindo um exemplo simples para cada operador
 
 dependencies: []
