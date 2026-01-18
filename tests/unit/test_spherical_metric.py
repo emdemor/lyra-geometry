@@ -1,7 +1,9 @@
-import sympy as sp
 import pytest
+import sympy as sp
 
 from lyra_geometry import TensorSpace
+
+pytestmark = pytest.mark.slow
 
 
 t, r, theta, phi = sp.symbols("t r theta phi")

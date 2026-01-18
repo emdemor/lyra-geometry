@@ -1,6 +1,9 @@
+import pytest
 import sympy as sp
 
 from lyra_geometry import TensorSpace
+
+pytestmark = pytest.mark.slow
 
 
 def test_schwarzschild_ricci_scalar_zero():
