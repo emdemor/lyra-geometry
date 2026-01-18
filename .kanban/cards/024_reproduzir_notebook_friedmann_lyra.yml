@@ -1,0 +1,28 @@
+id: 24
+title: Reproduzir notebook Friedmann com lyra-geometry
+type: Feature
+priority: P2
+service_class: Standard
+status: Ready
+owner: agent-codex
+
+context: |
+  Reproduzir o notebook SageMath `examples/research/sagemath-examples/SM_Friedmann_equations.ipynb` em um novo notebook Python usando lyra-geometry, salvando o resultado em `examples/research/lyra_SM_Friedmann_equations.ipynb`. O notebook deve definir o espaço-tempo FLRW com coordenadas `(t,r,theta,phi)`, parâmetros `G`, `Lambda`, `k` e fator de escala `a(t)`, calcular conexão, Ricci e escalar de Ricci via lyra-geometry e montar o tensor de energia-momento de fluido perfeito. Em seguida, deve derivar as duas equações de Friedmann (forma padrão e forma trace-reversed) a partir do tensor de Einstein, apresentando as expressões simplificadas e destacando a correspondência com as fórmulas cosmológicas usuais.
+
+acceptance_criteria:
+  - O novo notebook existe em `examples/research/lyra_SM_Friedmann_equations.ipynb` e usa apenas kernel Python padrão
+  - A métrica FLRW é construída com lyra-geometry e as quantidades `Ricci` e `R` são calculadas e exibidas
+  - O tensor energia-momento de fluido perfeito é definido e utilizado nas duas formas da equação de Einstein
+  - As componentes que levam às duas equações de Friedmann são mostradas e simplificadas simbolicamente
+  - O notebook contém texto explicando as escolhas de convenção e limitações comparadas ao notebook SageMath original, sem adicionar dependências externas ao projeto
+
+dependencies: []
+blockers: []
+artifacts:
+  - examples/research/lyra_SM_Friedmann_equations.ipynb
+  - examples/research/sagemath-examples/SM_Friedmann_equations.ipynb
+
+technical:
+  estimate: M
+  risk: Low
+  tags: [Examples, GR, Notebook]
