@@ -8,6 +8,7 @@
 - If notebooks or formulas changed, add a minimal reproduction snippet.
 
 ## Unreleased
+- docs: add lyra-geometry Friedmann equations notebook example
 - tests: add GR solution invariants for Schwarzschild and de Sitter
 - tests: add spherical symmetry checks for connection, curvature, Ricci, Einstein, and geodesics
 

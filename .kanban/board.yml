@@ -3,7 +3,6 @@ lanes:
     - 0011 - [Feature] Integrar com sympy.diffgeom e sympy.tensor
     - 0015 - [Feature] Create more usage examples
     - 0023 - [Feature] Reproduzir notebook TOV com lyra-geometry
-    - 0024 - [Feature] Reproduzir notebook Friedmann com lyra-geometry
     - 0025 - [Feature] Reproduzir notebook de Sitter com lyra-geometry
   Doing: []
   Review: []
