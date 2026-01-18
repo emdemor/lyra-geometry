@@ -84,6 +84,26 @@ Helpers:
   mu, nu = pl.greek("mu nu")
   ```
 
+## Riemann convention
+
+`TensorSpace` and `SpaceTime` accept a `riemann_convention` parameter to control
+the overall sign of the curvature tensors. The default is `"mtw"`/`"wald"` and
+matches the current library behavior:
+
+```
+R^rho_{ sigma mu nu } = d_mu Gamma^rho_{nu sigma}
+                      - d_nu Gamma^rho_{mu sigma}
+                      + Gamma^rho_{mu lambda} Gamma^lambda_{nu sigma}
+                      - Gamma^rho_{nu lambda} Gamma^lambda_{mu sigma}
+```
+
+Choosing `"landau-lifshitz"`/`"weinberg"` flips the global sign of the Riemann,
+Ricci, and scalar curvature tensors.
+
+```python
+st = pl.SpaceTime(coords=(x, y), metric=sp.diag(1, 1), riemann_convention="landau-lifshitz")
+```
+
 ## Module organization
 
 The public API continues to be re-exported from `lyra_geometry`, but the

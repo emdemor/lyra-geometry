@@ -12,6 +12,9 @@
 - docs: add lyra-geometry de Sitter notebook example
 - tests: add GR solution invariants for Schwarzschild and de Sitter
 - tests: add spherical symmetry checks for connection, curvature, Ricci, Einstein, and geodesics
+- feat: add riemann_convention option for choosing curvature sign
+- docs: document Riemann convention in README and notebooks
+- tests: add coverage for Riemann sign conventions
 
 ## v0.1.18
 - docs: translate user-facing strings and notebook outputs to English

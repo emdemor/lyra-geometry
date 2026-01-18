@@ -36,6 +36,27 @@ class CurvatureStrategy:
         raise NotImplementedError
 
 
+_RIEMANN_CONVENTION_SIGNS = {
+    "mtw": 1,
+    "wald": 1,
+    "landau-lifshitz": -1,
+    "weinberg": -1,
+}
+
+
+def _normalize_riemann_convention(convention):
+    if convention is None:
+        key = "mtw"
+    elif isinstance(convention, str):
+        key = convention.strip().lower().replace("_", "-").replace(" ", "-")
+    else:
+        raise TypeError("riemann_convention must be a string.")
+    if key not in _RIEMANN_CONVENTION_SIGNS:
+        allowed = ", ".join(sorted(_RIEMANN_CONVENTION_SIGNS.keys()))
+        raise ValueError(f"Unknown Riemann convention '{convention}'. Allowed: {allowed}.")
+    return key, _RIEMANN_CONVENTION_SIGNS[key]
+
+
 def _resolve_autoparallel_parameter(parameter):
     if isinstance(parameter, sp.Symbol):
         return parameter
@@ -91,9 +112,10 @@ class LyraCurvatureStrategy(CurvatureStrategy):
         coords = space.coords
         Gamma = gamma_components
         phi = space.phi.expr if isinstance(space.phi, Tensor) else space.phi
+        riemann_sign = space.riemann_convention_sign
 
         def curvature_element(l, a, m, n):
-            return (
+            return riemann_sign * (
                 1 / (phi**2) * sp.diff(phi * Gamma[l, a, n], coords[m])
                 - 1 / (phi**2) * sp.diff(phi * Gamma[l, a, m], coords[n])
                 + sum(Gamma[r, a, n] * Gamma[l, r, m] for r in range(dim))
@@ -136,6 +158,7 @@ class TensorSpace:
         connection=None,
         connection_strategy=None,
         curvature_strategy=None,
+        riemann_convention="mtw",
     ):
         self.dim = dim if dim else len(coords)
         self.coords = tuple(coords)
@@ -169,6 +192,9 @@ class TensorSpace:
         else:
             self.connection_strategy = connection_strategy or LyraConnectionStrategy()
         self.curvature_strategy = curvature_strategy or LyraCurvatureStrategy()
+        self.riemann_convention, self.riemann_convention_sign = _normalize_riemann_convention(
+            riemann_convention
+        )
         self.gamma = (
             Connection(connection, space=self) if connection is not None else Connection(None, space=self)
         )
