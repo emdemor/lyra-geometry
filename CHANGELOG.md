@@ -8,6 +8,8 @@
 - If notebooks or formulas changed, add a minimal reproduction snippet.
 
 ## Unreleased
+
+## v0.1.19
 - docs: add lyra-geometry Friedmann equations notebook example
 - docs: add lyra-geometry de Sitter notebook example
 - tests: add GR solution invariants for Schwarzschild and de Sitter
@@ -15,6 +17,7 @@
 - feat: add riemann_convention option for choosing curvature sign
 - docs: document Riemann convention in README and notebooks
 - tests: add coverage for Riemann sign conventions
+- tests: `PYTHONPATH=src python -m pytest -m "slow or not slow"` (105 passed in 221.68s)
 
 ## v0.1.18
 - docs: translate user-facing strings and notebook outputs to English
