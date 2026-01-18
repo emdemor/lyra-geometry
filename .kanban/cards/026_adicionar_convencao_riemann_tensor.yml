@@ -1,0 +1,38 @@
+id: 26
+title: Adicionar escolha de convencao do tensor de Riemann
+type: Feature
+priority: P2
+service_class: Standard
+status: Ready
+owner: agent-codex
+
+context: |
+  A biblioteca calcula o tensor de Riemann com uma convencao fixa, mas a literatura usa
+  duas convencoes principais que diferem por um sinal global. Precisamos expor essa escolha
+  na instancia de TensorSpace para evitar ambiguidade e permitir interoperabilidade com
+  referencias (MTW/Wald vs Landau-Lifshitz/Weinberg). A implementacao atual usa a forma
+  R^rho_{ sigma mu nu } = d_mu Gamma^rho_{nu sigma} - d_nu Gamma^rho_{mu sigma}
+  + Gamma^rho_{mu lambda} Gamma^lambda_{nu sigma}
+  - Gamma^rho_{nu lambda} Gamma^lambda_{mu sigma}, que corresponde a uma das convencoes
+  e deve permanecer como default. A nova API deve aceitar um Literal com os alias:
+  "mtw", "wald", "landau-lifshitz", "weinberg", mapeando as duas variantes e mantendo
+  compatibilidade com o comportamento atual.
+
+acceptance_criteria:
+  - TensorSpace aceita um parametro de convencao do Riemann com Literal["mtw", "wald", "landau-lifshitz", "weinberg"]
+  - O default reproduz exatamente o sinal atual para Riemann, Ricci e R
+  - A convencao alternativa inverte o sinal global do Riemann e ajusta Ricci/R de forma consistente
+  - A escolha de convencao fica documentada no docstring ou README, incluindo a formula explicita
+  - Testes cobrem ambas as convencoes com um exemplo simples (ex: de Sitter ou espaco de curvatura constante)
+
+dependencies: []
+blockers: []
+
+artifacts:
+  - src/lyra_geometry/core.py
+  - tests/unit/test_curvature_convention.py
+
+technical:
+  estimate: M
+  risk: Medium
+  tags: [Curvature, API, GR]
