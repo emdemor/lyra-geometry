@@ -56,7 +56,7 @@ Agents MUST NOT:
 - Tests must be runnable via `python -m pytest`.
 - Use descriptive test names (e.g., `test_raise_index_roundtrip`).
 - When adding new tests:
-  - Prefer unit tests with minimal symbolic expressions; mark long-running tests with `@pytest.mark.slow`.
+  - Mark long-running tests with `@pytest.mark.slow`.
   - Default `python -m pytest` runs only non-slow tests; full runs use `python -m pytest -m "slow or not slow"`.
   - Include clear expected results (analytic values or explicit formulas) and avoid brittle simplifications.
   - Keep new tests focused on the card scope and update `CHANGELOG.md` for user-facing additions.
