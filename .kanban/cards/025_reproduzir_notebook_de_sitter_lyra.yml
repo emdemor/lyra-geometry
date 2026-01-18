@@ -7,7 +7,7 @@ status: Ready
 owner: agent-codex
 
 context: |
-  Reproduzir o notebook SageMath `examples/research/sagemath-examples/SM_de_Sitter.ipynb` em um novo notebook Python usando lyra-geometry, salvando o resultado em `examples/research/lyra_SM_de_Sitter.ipynb`. O notebook deve definir coordenadas hiperesféricas `(tau, chi, theta, phi)` e o parâmetro `b`, reconstruir a métrica de de Sitter (diretamente a partir das expressões conhecidas ou via derivação simbólica da imersão em R^{1,4} usando SymPy) e então calcular Riemann, Ricci e escalar de Ricci com lyra-geometry. Deve ainda verificar a condição de curvatura constante e a equação de Einstein com `Lambda = 3*b^2`, explicitando as verificações simbólicas realizadas e as limitações frente à versão SageMath (por exemplo, ausência de gráficos 3D).
+  Reproduzir o notebook SageMath `examples/research/sagemath-examples/SM_de_Sitter.ipynb` em um novo notebook Python usando lyra-geometry, salvando o resultado em `examples/lyra_SM_de_Sitter.ipynb`. O notebook deve definir coordenadas hiperesféricas `(tau, chi, theta, phi)` e o parâmetro `b`, reconstruir a métrica de de Sitter (diretamente a partir das expressões conhecidas ou via derivação simbólica da imersão em R^{1,4} usando SymPy) e então calcular Riemann, Ricci e escalar de Ricci com lyra-geometry. Deve ainda verificar a condição de curvatura constante e a equação de Einstein com `Lambda = 3*b^2`, explicitando as verificações simbólicas realizadas e as limitações frente à versão SageMath (por exemplo, ausência de gráficos 3D).
 
 acceptance_criteria:
   - O novo notebook existe em `examples/research/lyra_SM_de_Sitter.ipynb` e usa apenas kernel Python padrão
