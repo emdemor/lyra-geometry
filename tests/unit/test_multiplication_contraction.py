@@ -25,6 +25,17 @@ def test_tensor_tensor_multiplication_contracts_repeated_labels(space_flat):
     assert contracted.signature == (D, U)
 
 
+def test_indexed_tensor_reindex_and_contract(space_flat):
+    """Reindex an IndexedTensor and contract with raised indices."""
+    a, b = space_flat.index("a b")
+    t = space_flat.from_array([[1, 2], [3, 4]], signature=(D, D))
+    f = t[-a, -b]
+    contracted = f[-a, -b] * f[+a, +b]
+    assert isinstance(contracted, Tensor)
+    assert contracted.rank == 0
+    assert contracted.components[()] == 30
+
+
 def test_tensor_connection_multiplication_contracts_repeated_labels(space_flat):
     """Multiply tensor by connection and contract repeated labels."""
     a, b, c, d = space_flat.index("a b c d")

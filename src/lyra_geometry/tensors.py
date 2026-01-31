@@ -714,6 +714,33 @@ class IndexedTensor:
         slicer = idx + (slice(None),) * (rank - len(idx))
         return self.components[slicer]
 
+    def __getitem__(self, indices):
+        if not isinstance(indices, tuple):
+            indices = (indices,)
+        if any(isinstance(idx, (UpIndex, DownIndex, Index)) for idx in indices):
+            if any(isinstance(idx, Index) for idx in indices):
+                raise TypeError("Use +a/-b for indices with explicit variance.")
+            if not all(isinstance(idx, (UpIndex, DownIndex)) for idx in indices):
+                raise TypeError("Use only +a/-b (or U(a)/D(b)) to index the tensor.")
+            if len(indices) != len(self.signature):
+                raise ValueError("Number of indices does not match tensor rank.")
+            up = [None] * len(self.signature)
+            down = [None] * len(self.signature)
+            for i, idx in enumerate(indices):
+                if isinstance(idx, UpIndex):
+                    up[i] = idx.label
+                else:
+                    down[i] = idx.label
+            indexed = self.tensor.idx(up=up, down=down)
+            history = set(getattr(indexed, "_label_history", set()))
+            history.update(getattr(self, "_label_history", set()))
+            indexed._label_history = history
+            labels = indexed.labels
+            if len(set(labels)) != len(labels):
+                return self.tensor.space.contract(indexed)
+            return indexed
+        return self.components[indices]
+
     def get(self, *idx):
         return self.__call__(*idx)
 

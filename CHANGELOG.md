@@ -9,6 +9,10 @@
 
 ## Unreleased
 
+## v0.1.20
+- fix: support reindexing IndexedTensor via __getitem__ for contractions
+- tests: `PYTHONPATH=src python -m pytest` (55 passed, 51 deselected in 27.42s)
+
 ## v0.1.19
 - docs: add lyra-geometry Friedmann equations notebook example
 - docs: add lyra-geometry de Sitter notebook example

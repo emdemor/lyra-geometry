@@ -1,0 +1,30 @@
+id: 27
+title: Corrigir contracao de IndexedTensor
+type: Bug
+priority: P2
+service_class: Standard
+status: Done
+owner: agent-codex
+
+context: |
+  Ao calcular F[-m,-n] * F[+m,+n] ocorre TypeError: 'IndexedTensor' object
+  is not subscriptable, o que impede contracoes basicas entre tensores com
+  indices levantados/abaixados em Lyra Geometry.
+
+acceptance_criteria:
+  - A expressao F[-m,-n] * F[+m,+n] nao levanta TypeError no exemplo informado
+  - A contracao retorna um escalar sympy ou tensor de ordem 0 consistente
+  - Ha teste de regressao em tests/ cobrindo o caso de contracao com indices
+
+dependencies: []
+blockers: []
+artifacts: []
+
+created_at: null
+started_at: null
+done_at: null
+
+technical:
+  estimate: S
+  risk: Low
+  tags: [Bug, Tensor, IndexedTensor]
