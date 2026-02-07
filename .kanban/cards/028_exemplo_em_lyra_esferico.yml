@@ -1,0 +1,31 @@
+id: 28
+title: Adicionar exemplo de campo eletromagnetico esferico em Lyra
+type: Feature
+priority: P2
+service_class: Standard
+status: Ready
+owner: agent-codex
+
+context: |
+  Criar um exemplo com campo eletromagnetico em espaco-tempo curvo de Lyra com
+  simetria esferica. O exemplo deve definir o 4-vetor potencial eletromagnetico
+  com simetria esferica, construir o tensor eletromagnetico antissimetrico e
+  definir a lagrangiana Lyra-Scalar invariante como a contracao completa
+  (-1/4 F_{mu nu} F^{mu nu}). Por fim, obter as equacoes de campo variando com
+  respeito a phi e com respeito a A_{mu}.
+
+acceptance_criteria:
+  - O exemplo define explicitamente A_{mu} com simetria esferica
+  - O tensor F_{mu nu} e construido como antissimetrico a partir de A_{mu}
+  - A lagrangiana invariante L = -1/4 F_{mu nu} F^{mu nu} e calculada
+  - As equacoes de campo sao obtidas por variacao em relacao a phi e A_{mu}
+  - O exemplo esta disponivel em examples/ ou README.md sem novas dependencias
+
+dependencies: []
+blockers: []
+artifacts: []
+
+technical:
+  estimate: M
+  risk: Medium
+  tags: [Examples, EM, Lyra]

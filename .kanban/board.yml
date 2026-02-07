@@ -3,5 +3,6 @@ lanes:
     - 0011 - [Feature] Integrar com sympy.diffgeom e sympy.tensor
     - 0015 - [Feature] Create more usage examples
     - 0023 - [Feature] Reproduzir notebook TOV com lyra-geometry
+    - 0028 - [Feature] Adicionar exemplo de campo eletromagnetico esferico em Lyra
   Doing: []
   Review: []
